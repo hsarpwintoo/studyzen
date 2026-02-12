@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+
+# Miscellaneous
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
