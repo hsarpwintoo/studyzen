@@ -1,31 +1,23 @@
-/**
- * App Navigator
- * Handles main app flow (after authentication)
- */
-
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ROUTES, STACKS } from './routeConstants';
-import HomeScreen from '../features/home/screens/HomeScreen';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import HomeScreen from './HomeScreen';
+import StudyPlannerScreen from './StudyPlannerScreen';
+import FocusTimerScreen from './FocusTimerScreen';
+import ProgressScreen from './ProgressScreen';
+import SettingsScreen from './SettingsScreen';
+import RouteNames from './RouteNames';
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        animationEnabled: true,
-      }}
-    >
-      <Stack.Screen
-        name={ROUTES.HOME}
-        component={HomeScreen}
-        options={{
-          title: 'Home',
-        }}
-      />
-    </Stack.Navigator>
+    <Tab.Navigator>
+      <Tab.Screen name={RouteNames.HOME} component={HomeScreen} />
+      <Tab.Screen name={RouteNames.STUDY_PLANNER} component={StudyPlannerScreen} />
+      <Tab.Screen name={RouteNames.FOCUS_TIMER} component={FocusTimerScreen} />
+      <Tab.Screen name={RouteNames.PROGRESS} component={ProgressScreen} />
+      <Tab.Screen name={RouteNames.SETTINGS} component={SettingsScreen} />
+    </Tab.Navigator>
   );
 };
 
