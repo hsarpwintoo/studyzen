@@ -1,68 +1,37 @@
-/**
- * Home Screen
- * Main dashboard screen after user logs in
- */
-
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet } from 'react-native';
 
-const HomeScreen = ({ navigation }) => {
-  const handleLogoutPress = () => {
-    // TODO: Implement actual logout logic with AuthContext
-    // For now, navigate back to Login screen
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
-  };
-
+const HomeScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to StudyZen</Text>
-      <Text style={styles.subtitle}>Your Home Dashboard</Text>
-      
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={handleLogoutPress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.welcomeMessage}>Welcome to StudyZen!</Text>
+      <View style={styles.card}><Text style={styles.cardText}>Study Planner</Text></View>
+      <View style={styles.card}><Text style={styles.cardText}>Focus Timer</Text></View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+  welcomeMessage: {
+    fontSize: 24,
+    marginBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  button: {
-    backgroundColor: '#ef4444',
-    paddingVertical: 14,
-    paddingHorizontal: 40,
+  card: {
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+    marginBottom: 16,
     borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+  cardText: {
+    fontSize: 18,
   },
 });
 
