@@ -4,10 +4,9 @@ import { subscribeToAuthChanges } from '../services/authService';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // undefined = still initialising (shows spinner)
-  // null      = signed out
-  // object    = signed in
-  const [user, setUser] = useState(undefined);
+  // null    = signed out (default — shows GetStarted immediately)
+  // object  = signed in
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // onAuthStateChanged fires immediately with current user or null

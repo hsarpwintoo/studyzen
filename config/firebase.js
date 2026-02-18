@@ -17,10 +17,11 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCooiPC0xnr3g0v6I0rs5-ou-2fGfy8NgE',
@@ -35,10 +36,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Use browserLocalPersistence so session survives refresh on web
+// Use React Native AsyncStorage persistence so auth state is properly managed
 let auth;
 try {
-  auth = initializeAuth(app, { persistence: browserLocalPersistence });
+  auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
 } catch {
   auth = getAuth(app); // fallback if already initialized
 }
