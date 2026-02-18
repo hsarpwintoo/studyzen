@@ -1,13 +1,15 @@
 /**
  * App Entry Point
- * Root component of the application
  */
 
 import React from 'react';
+import { AuthProvider } from './context/AuthContext';
 import RootNavigator from './navigation/RootNavigator';
 
-const App = () => {
-  return <RootNavigator />;
-};
+const App = () => (
+  <AuthProvider>
+    <RootNavigator />
+  </AuthProvider>
+);
 
 export default App;

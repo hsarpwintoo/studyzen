@@ -1,32 +1,15 @@
-/**
- * Authentication Navigator
- * Handles authentication flow (Login, Register, etc.)
- */
-
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ROUTES, STACKS } from './routeConstants';
-import LoginScreen from '../features/authentication/screens/LoginScreen';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import GetStartedScreen from "../features/authentication/screens/GetStartedScreen";
+import LoginScreen from "../features/authentication/screens/LoginScreen";
 
 const Stack = createNativeStackNavigator();
 
-const AuthNavigator = () => {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        animationEnabled: true,
-      }}
-    >
-      <Stack.Screen
-        name={ROUTES.LOGIN}
-        component={LoginScreen}
-        options={{
-          title: 'Login',
-        }}
-      />
-    </Stack.Navigator>
-  );
-};
+const AuthNavigator = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="GetStarted" component={GetStartedScreen} />
+    <Stack.Screen name="Login" component={LoginScreen} />
+  </Stack.Navigator>
+);
 
 export default AuthNavigator;

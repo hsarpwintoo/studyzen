@@ -1,30 +1,36 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { RouteNames } from './routeConstants'; // Correct path may vary
-import Login from '../screens/Login';
-import Home from '../screens/Home';
-import Profile from '../screens/Profile';
-// Import other screens as needed
+﻿/**
+ * Root Navigator
+ * Reads auth state from AuthContext and renders the correct navigator.
+ */
 
-const Stack = createStackNavigator();
+import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import AuthNavigator from './AuthNavigator';
+import AppNavigator from './AppNavigator';
+import { useAuth } from '../context/AuthContext';
 
 const RootNavigator = () => {
+  const { user } = useAuth();
+
+  // null means definitively signed out; undefined means still initialising
+  if (user === undefined) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#C0714F" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={RouteNames.LOGIN} screenOptions={{ headerShown: false }}>
-        <Stack.Screen name={RouteNames.LOGIN} component={Login} />
-        <Stack.Screen name={RouteNames.HOME} component={Home} />
-        <Stack.Screen name={RouteNames.PROFILE} component={Profile} />
-        {/* Add more screens to your Auth and App flows */}
-      </Stack.Navigator>
+      {user ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  // Define your styles here using StyleSheet
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5EFE6' },
 });
 
 export default RootNavigator;
