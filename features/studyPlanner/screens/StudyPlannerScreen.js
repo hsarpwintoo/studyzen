@@ -1,38 +1,86 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, ActivityIndicator } from 'react-native';
+import { useAuth } from '../../../context/AuthContext';
+import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
-const INIT = [
-  { id: 1, time: '08:00', label: 'Morning review', tag: 'Biology', done: true },
-  { id: 2, time: '09:30', label: 'Practice problems', tag: 'Math', done: true },
-  { id: 3, time: '11:00', label: 'Essay research', tag: 'English', done: false },
-  { id: 4, time: '13:00', label: 'Lunch break', tag: 'Break', done: false },
-  { id: 5, time: '14:00', label: 'Flashcard review', tag: 'History', done: false },
-  { id: 6, time: '16:00', label: 'Deep focus session', tag: 'Physics', done: false },
+const DEFAULT_TASKS = [
+  { time: '08:00', label: 'Morning review', tag: 'Biology', done: false },
+  { time: '09:30', label: 'Practice problems', tag: 'Math', done: false },
+  { time: '11:00', label: 'Essay research', tag: 'English', done: false },
+  { time: '13:00', label: 'Lunch break', tag: 'Break', done: false },
+  { time: '14:00', label: 'Flashcard review', tag: 'History', done: false },
+  { time: '16:00', label: 'Deep focus session', tag: 'Physics', done: false },
 ];
 
+const todayStr = () =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
 const StudyPlannerScreen = () => {
-  const [tasks, setTasks] = useState(INIT);
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const [newTag, setNewTag] = useState('');
+  const [newTime, setNewTime] = useState('');
   const done = tasks.filter(t => t.done).length;
-  const toggle = id => setTasks(p => p.map(t => t.id === id ? { ...t, done: !t.done } : t));
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    let seeded = false;
+    const unsub = listenToUserCollection(user.uid, 'plannerTasks', async (items) => {
+      if (items.length > 0) {
+        setTasks(items.sort((a, b) => (a.time || '').localeCompare(b.time || '')));
+        setLoading(false);
+      } else if (!seeded) {
+        seeded = true;
+        await Promise.all(DEFAULT_TASKS.map(t => addUserDocument(user.uid, 'plannerTasks', t)));
+      }
+    });
+    return unsub;
+  }, [user?.uid]);
+
+  const toggle = (task) => saveUserTask(user.uid, 'plannerTasks', task.id, { done: !task.done });
+
+  const addTask = async () => {
+    if (!newLabel.trim()) return;
+    await addUserDocument(user.uid, 'plannerTasks', {
+      label: newLabel.trim(),
+      tag: newTag.trim() || 'Study',
+      time: newTime.trim() || '--:--',
+      done: false,
+    });
+    setNewLabel(''); setNewTag(''); setNewTime(''); setShowAdd(false);
+  };
+
+  if (loading) return (
+    <SafeAreaView style={s.root}>
+      <ActivityIndicator style={{ flex: 1 }} size="large" color="#C0714F" />
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
         <View>
           <Text style={s.title}>Study Planner</Text>
-          <Text style={s.sub}>Tuesday, 18 Feb 2026</Text>
+          <Text style={s.sub}>{todayStr()}</Text>
         </View>
         <View style={s.pill}><Text style={s.pillTxt}>{done}/{tasks.length}</Text></View>
       </View>
 
-      <View style={s.track}>
-        <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
-      </View>
-      <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}% complete</Text>
+      {tasks.length > 0 && (
+        <>
+          <View style={s.track}>
+            <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
+          </View>
+          <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}% complete</Text>
+        </>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.list}>
         {tasks.map(t => (
-          <TouchableOpacity key={t.id} style={[s.row, t.done && s.rowDone]} onPress={() => toggle(t.id)} activeOpacity={0.75}>
+          <TouchableOpacity key={t.id} style={[s.row, t.done && s.rowDone]} onPress={() => toggle(t)} activeOpacity={0.75}>
             <Text style={s.time}>{t.time}</Text>
             <View style={[s.check, t.done && s.checkDone]}>
               {t.done && <Text style={s.tick}>✓</Text>}
@@ -43,9 +91,35 @@ const StudyPlannerScreen = () => {
         ))}
       </ScrollView>
 
-      <TouchableOpacity style={s.fab} activeOpacity={0.85}>
-        <Text style={s.fabIcon}>+</Text>
-      </TouchableOpacity>
+      {showAdd && (
+        <View style={s.addPanel}>
+          <TextInput
+            style={s.input}
+            placeholder="Task name"
+            placeholderTextColor="#A1887F"
+            value={newLabel}
+            onChangeText={setNewLabel}
+          />
+          <View style={s.inputRow}>
+            <TextInput style={[s.input, s.halfInput]} placeholder="Tag (e.g. Math)" placeholderTextColor="#A1887F" value={newTag} onChangeText={setNewTag} />
+            <TextInput style={[s.input, s.halfInput, { marginLeft: 8 }]} placeholder="Time (e.g. 09:00)" placeholderTextColor="#A1887F" value={newTime} onChangeText={setNewTime} />
+          </View>
+          <View style={s.inputRow}>
+            <TouchableOpacity style={[s.addBtn, s.halfInput]} onPress={addTask} activeOpacity={0.85}>
+              <Text style={s.addBtnTxt}>Add Task</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.cancelBtn, s.halfInput, { marginLeft: 8 }]} onPress={() => { setShowAdd(false); setNewLabel(''); setNewTag(''); setNewTime(''); }} activeOpacity={0.75}>
+              <Text style={s.cancelBtnTxt}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {!showAdd && (
+        <TouchableOpacity style={s.fab} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
+          <Text style={s.fabIcon}>+</Text>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };
@@ -72,6 +146,14 @@ const s = StyleSheet.create({
   tag: { fontSize: 11, fontWeight: '600', color: '#A1887F', backgroundColor: '#EDE3D8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   fab: { position: 'absolute', bottom: 24, right: 20, width: 56, height: 56, borderRadius: 999, backgroundColor: '#6B4226', alignItems: 'center', justifyContent: 'center', elevation: 6 },
   fabIcon: { fontSize: 26, color: '#fff', lineHeight: 28 },
+  addPanel: { backgroundColor: '#FDF8F2', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, elevation: 8, borderTopWidth: 1, borderColor: '#E0D0C0' },
+  input: { backgroundColor: '#EDE3D8', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: '#3E2723', marginBottom: 10 },
+  inputRow: { flexDirection: 'row', marginBottom: 0 },
+  halfInput: { flex: 1 },
+  addBtn: { backgroundColor: '#6B4226', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginBottom: 0 },
+  addBtnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  cancelBtn: { backgroundColor: '#EDE3D8', paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+  cancelBtnTxt: { color: '#6B4226', fontWeight: '600', fontSize: 14 },
 });
 
 export default StudyPlannerScreen;

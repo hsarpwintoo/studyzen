@@ -15,8 +15,10 @@ const Row = ({ icon, label, sub, right }) => (
 );
 
 const SettingsScreen = () => {
-  const { setUser } = useAuth();
+  const { user, setUser } = useAuth();
   const handleLogout = async () => { await logoutUser(); setUser(null); };
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Scholar';
+  const initials = displayName.slice(0, 2).toUpperCase();
   const [notif, setNotif] = useState(true);
   const [sounds, setSounds] = useState(true);
   const [dark, setDark] = useState(false);
@@ -27,10 +29,10 @@ const SettingsScreen = () => {
         <Text style={s.title}>Settings</Text>
 
         <View style={s.profile}>
-          <View style={s.avatar}><Text style={s.avatarTxt}>SZ</Text></View>
+          <View style={s.avatar}><Text style={s.avatarTxt}>{initials}</Text></View>
           <View style={s.profileInfo}>
-            <Text style={s.profileName}>Scholar</Text>
-            <Text style={s.profileEmail}>scholar@studyzen.app</Text>
+            <Text style={s.profileName}>{displayName}</Text>
+            <Text style={s.profileEmail}>{user?.email || ''}</Text>
           </View>
         </View>
 

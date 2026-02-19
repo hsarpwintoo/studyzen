@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { useAuth } from '../../../context/AuthContext';
+import { listenToUserCollection, addUserDocument } from '../../../services/firestoreService';
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
 
 const W = Dimensions.get('window').width;
 const RING = W * 0.62;
@@ -10,19 +14,46 @@ const PRESETS = [
 ];
 
 const FocusTimerScreen = () => {
+  const { user } = useAuth();
   const [preset, setPreset] = useState(PRESETS[0]);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
   const tick = useRef(null);
+  const completedRef = useRef(false);
+
+  // Load today's session count from Firestore
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = listenToUserCollection(user.uid, 'sessions', (items) => {
+      const today = todayKey();
+      setSessionCount(items.filter(s => s.date === today).length);
+    });
+    return unsub;
+  }, [user?.uid]);
 
   useEffect(() => {
     if (running) {
+      completedRef.current = false;
       tick.current = setInterval(() => {
         setSeconds(s => {
           if (s === 0) {
             setMinutes(m => {
-              if (m === 0) { clearInterval(tick.current); setRunning(false); return 0; }
+              if (m === 0) {
+                clearInterval(tick.current);
+                setRunning(false);
+                // Log completed session to Firestore
+                if (!completedRef.current && user?.uid) {
+                  completedRef.current = true;
+                  addUserDocument(user.uid, 'sessions', {
+                    date: todayKey(),
+                    type: preset.label,
+                    duration: preset.mins,
+                  });
+                }
+                return 0;
+              }
               return m - 1;
             });
             return 59;
@@ -63,9 +94,9 @@ const FocusTimerScreen = () => {
         </TouchableOpacity>
       </View>
       <View style={s.sessions}>
-        <Text style={s.sessionsTxt}>Sessions today</Text>
+        <Text style={s.sessionsTxt}>Sessions today: {sessionCount}</Text>
         <View style={s.dots}>
-          {[1,2,3,4].map(i => <View key={i} style={[s.dot, i <= 2 && s.dotOn]} />)}
+          {[0,1,2,3].map(i => <View key={i} style={[s.dot, i < sessionCount && s.dotOn]} />)}
         </View>
       </View>
     </SafeAreaView>

@@ -16,6 +16,7 @@ import {
   collection,
   doc,
   setDoc,
+  addDoc,
   getDoc,
   getDocs,
   updateDoc,
@@ -115,3 +116,24 @@ export const subscribeToCollection = (collectionName, filters = [], onData, onEr
     onError
   );
 };
+
+// ─── Per-User Collection Helpers ─────────────────────────────────────────────
+
+/** Real-time listener for a user's sub-collection. Returns unsubscribe fn. */
+export const listenToUserCollection = (uid, subcollection, callback) =>
+  onSnapshot(
+    collection(db, 'users', uid, subcollection),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  );
+
+/** Create or merge-update a document in a user's sub-collection. */
+export const saveUserTask = (uid, subcollection, taskId, data) =>
+  setDoc(doc(db, 'users', uid, subcollection, taskId), data, { merge: true });
+
+/** Add a new document with auto-generated ID in a user's sub-collection. */
+export const addUserDocument = (uid, subcollection, data) =>
+  addDoc(collection(db, 'users', uid, subcollection), { ...data, createdAt: serverTimestamp() });
+
+/** Delete a document from a user's sub-collection. */
+export const deleteUserDocument = (uid, subcollection, docId) =>
+  deleteDoc(doc(db, 'users', uid, subcollection, docId));

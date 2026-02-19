@@ -1,20 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { logoutUser } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
+import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
-const TASKS = [
-  { id: 1, label: 'Read Chapter 5', tag: 'Biology', done: true },
-  { id: 2, label: 'Practice Calculus', tag: 'Math', done: true },
-  { id: 3, label: 'Essay Outline', tag: 'English', done: false },
-  { id: 4, label: 'Flashcard Review', tag: 'History', done: false },
+const DEFAULT_TASKS = [
+  { label: 'Read Chapter 5', tag: 'Biology', done: false },
+  { label: 'Practice Calculus', tag: 'Math', done: false },
+  { label: 'Essay Outline', tag: 'English', done: false },
+  { label: 'Flashcard Review', tag: 'History', done: false },
 ];
 
+const todayStr = () =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
 const HomeScreen = () => {
-  const { setUser } = useAuth();
-  const handleLogout = async () => { await logoutUser(); setUser(null); };
-  const [tasks, setTasks] = useState(TASKS);
+  const { user, setUser } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Scholar';
+  const initials = displayName.slice(0, 2).toUpperCase();
   const done = tasks.filter(t => t.done).length;
+
+  const handleLogout = async () => { await logoutUser(); setUser(null); };
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    let seeded = false;
+    const unsub = listenToUserCollection(user.uid, 'homeTasks', async (items) => {
+      if (items.length > 0) {
+        setTasks(items);
+        setLoading(false);
+      } else if (!seeded) {
+        seeded = true;
+        await Promise.all(DEFAULT_TASKS.map(t => addUserDocument(user.uid, 'homeTasks', t)));
+      }
+    });
+    return unsub;
+  }, [user?.uid]);
+
+  const toggleTask = (task) => saveUserTask(user.uid, 'homeTasks', task.id, { done: !task.done });
+
+  if (loading) return (
+    <SafeAreaView style={s.root}>
+      <ActivityIndicator style={{ flex: 1 }} size="large" color="#C0714F" />
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={s.root}>
@@ -22,11 +54,11 @@ const HomeScreen = () => {
 
         <View style={s.header}>
           <View>
-            <Text style={s.greeting}>Hello, Scholar!</Text>
-            <Text style={s.date}>Tuesday, 18 Feb 2026</Text>
+            <Text style={s.greeting}>Hello, {displayName}!</Text>
+            <Text style={s.date}>{todayStr()}</Text>
           </View>
           <TouchableOpacity style={s.avatar} onPress={handleLogout}>
-            <Text style={s.avatarTxt}>SZ</Text>
+            <Text style={s.avatarTxt}>{initials}</Text>
           </TouchableOpacity>
         </View>
 
@@ -45,23 +77,25 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        <View style={s.card}>
-          <View style={s.row}>
-            <Text style={s.cardTitle}>Today Goal</Text>
-            <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}%</Text>
+        {tasks.length > 0 && (
+          <View style={s.card}>
+            <View style={s.row}>
+              <Text style={s.cardTitle}>Today's Goal</Text>
+              <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}%</Text>
+            </View>
+            <Text style={s.goalName}>Complete all study tasks</Text>
+            <View style={s.track}>
+              <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
+            </View>
           </View>
-          <Text style={s.goalName}>Finish Biology Unit 3</Text>
-          <View style={s.track}>
-            <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
-          </View>
-        </View>
+        )}
 
-        <Text style={s.section}>Today Tasks</Text>
+        <Text style={s.section}>Today's Tasks</Text>
         {tasks.map(t => (
           <TouchableOpacity
             key={t.id}
             style={s.taskRow}
-            onPress={() => setTasks(prev => prev.map(x => x.id === t.id ? { ...x, done: !x.done } : x))}
+            onPress={() => toggleTask(t)}
             activeOpacity={0.75}
           >
             <View style={[s.check, t.done && s.checkDone]}>
