@@ -17,11 +17,10 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getAuth, initializeAuth, inMemoryPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCooiPC0xnr3g0v6I0rs5-ou-2fGfy8NgE',
@@ -36,12 +35,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Use React Native AsyncStorage persistence so auth state is properly managed
+// inMemoryPersistence: session is never saved to disk.
+// This guarantees GetStarted always appears on every fresh launch.
 let auth;
 try {
-  auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
+  auth = initializeAuth(app, { persistence: inMemoryPersistence });
 } catch {
-  auth = getAuth(app); // fallback if already initialized
+  auth = getAuth(app);
 }
 
 export { auth };
