@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { logoutUser } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
 const DEFAULT_TASKS = [
@@ -16,6 +17,7 @@ const todayStr = () =>
 
 const HomeScreen = () => {
   const { user, setUser } = useAuth();
+  const { theme } = useTheme();
   const [tasks, setTasks] = useState(DEFAULT_TASKS);
   const [fromFirestore, setFromFirestore] = useState(false);
 
@@ -51,60 +53,60 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView style={[s.root, { backgroundColor: theme.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
         <View style={s.header}>
           <View>
-            <Text style={s.greeting}>Hello, {displayName}!</Text>
-            <Text style={s.date}>{todayStr()}</Text>
+            <Text style={[s.greeting, { color: theme.text }]}>Hello, {displayName}!</Text>
+            <Text style={[s.date, { color: theme.textSec }]}>{todayStr()}</Text>
           </View>
-          <TouchableOpacity style={s.avatar} onPress={handleLogout}>
+          <TouchableOpacity style={[s.avatar, { backgroundColor: theme.brown }]} onPress={handleLogout}>
             <Text style={s.avatarTxt}>{initials}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={s.statsRow}>
-          <View style={[s.stat, s.statAccent]}>
-            <Text style={s.statValW}>3.5h</Text>
-            <Text style={s.statLblW}>Focus</Text>
+          <View style={[s.stat, { backgroundColor: theme.accent }]}>
+            <Text style={[s.statVal, { color: '#fff' }]}>3.5h</Text>
+            <Text style={[s.statLbl, { color: 'rgba(255,255,255,0.8)' }]}>Focus</Text>
           </View>
-          <View style={s.stat}>
-            <Text style={s.statVal}>{done}</Text>
-            <Text style={s.statLbl}>Done</Text>
+          <View style={[s.stat, { backgroundColor: theme.card }]}>
+            <Text style={[s.statVal, { color: theme.brown }]}>{done}</Text>
+            <Text style={[s.statLbl, { color: theme.textSec }]}>Done</Text>
           </View>
-          <View style={s.stat}>
-            <Text style={s.statVal}>7</Text>
-            <Text style={s.statLbl}>Streak</Text>
+          <View style={[s.stat, { backgroundColor: theme.card }]}>
+            <Text style={[s.statVal, { color: theme.brown }]}>7</Text>
+            <Text style={[s.statLbl, { color: theme.textSec }]}>Streak</Text>
           </View>
         </View>
 
         {tasks.length > 0 && (
-          <View style={s.card}>
+          <View style={[s.card, { backgroundColor: theme.card }]}>
             <View style={s.row}>
-              <Text style={s.cardTitle}>Today's Goal</Text>
-              <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}%</Text>
+              <Text style={[s.cardTitle, { color: theme.textSec }]}>Today's Goal</Text>
+              <Text style={[s.pct, { color: theme.accent }]}>{Math.round((done / tasks.length) * 100)}%</Text>
             </View>
-            <Text style={s.goalName}>Complete all study tasks</Text>
-            <View style={s.track}>
-              <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
+            <Text style={[s.goalName, { color: theme.text }]}>Complete all study tasks</Text>
+            <View style={[s.track, { backgroundColor: theme.input }]}>
+              <View style={[s.fill, { width: (done / tasks.length * 100) + '%', backgroundColor: theme.accent }]} />
             </View>
           </View>
         )}
 
-        <Text style={s.section}>Today's Tasks</Text>
+        <Text style={[s.section, { color: theme.text }]}>Today's Tasks</Text>
         {tasks.map(t => (
           <TouchableOpacity
             key={t.id}
-            style={s.taskRow}
+            style={[s.taskRow, { backgroundColor: theme.card }]}
             onPress={() => toggleTask(t)}
             activeOpacity={0.75}
           >
-            <View style={[s.check, t.done && s.checkDone]}>
+            <View style={[s.check, { borderColor: theme.border }, t.done && { backgroundColor: theme.accent, borderColor: theme.accent }]}>
               {t.done && <Text style={s.tick}>✓</Text>}
             </View>
-            <Text style={[s.taskLbl, t.done && s.taskDone]}>{t.label}</Text>
-            <Text style={s.tag}>{t.tag}</Text>
+            <Text style={[s.taskLbl, { color: theme.text }, t.done && { textDecorationLine: 'line-through', color: theme.textSec }]}>{t.label}</Text>
+            <Text style={[s.tag, { color: theme.textSec, backgroundColor: theme.input }]}>{t.tag}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -113,35 +115,30 @@ const HomeScreen = () => {
 };
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5EFE6' },
+  root: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  greeting: { fontSize: 20, fontWeight: '800', color: '#3E2723' },
-  date: { fontSize: 13, color: '#A1887F', marginTop: 2 },
-  avatar: { width: 42, height: 42, borderRadius: 999, backgroundColor: '#6B4226', alignItems: 'center', justifyContent: 'center' },
+  greeting: { fontSize: 20, fontWeight: '800' },
+  date: { fontSize: 13, marginTop: 2 },
+  avatar: { width: 42, height: 42, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { fontSize: 13, fontWeight: '700', color: '#fff' },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  stat: { flex: 1, backgroundColor: '#FDF8F2', borderRadius: 16, padding: 14, alignItems: 'center', elevation: 2 },
-  statAccent: { backgroundColor: '#C0714F' },
-  statVal: { fontSize: 22, fontWeight: '800', color: '#6B4226' },
-  statValW: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  statLbl: { fontSize: 12, color: '#A1887F', marginTop: 2 },
-  statLblW: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  card: { backgroundColor: '#FDF8F2', borderRadius: 18, padding: 18, marginBottom: 20, elevation: 2 },
+  stat: { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', elevation: 2 },
+  statVal: { fontSize: 22, fontWeight: '800' },
+  statLbl: { fontSize: 12, marginTop: 2 },
+  card: { borderRadius: 18, padding: 18, marginBottom: 20, elevation: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  cardTitle: { fontSize: 13, fontWeight: '600', color: '#A1887F' },
-  pct: { fontSize: 13, fontWeight: '700', color: '#C0714F' },
-  goalName: { fontSize: 17, fontWeight: '700', color: '#3E2723', marginBottom: 12 },
-  track: { height: 8, backgroundColor: '#EDE3D8', borderRadius: 999, overflow: 'hidden' },
-  fill: { height: '100%', backgroundColor: '#C0714F', borderRadius: 999 },
-  section: { fontSize: 16, fontWeight: '700', color: '#3E2723', marginBottom: 12 },
-  taskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FDF8F2', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 1 },
-  check: { width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: '#E0D0C0', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  checkDone: { backgroundColor: '#C0714F', borderColor: '#C0714F' },
+  cardTitle: { fontSize: 13, fontWeight: '600' },
+  pct: { fontSize: 13, fontWeight: '700' },
+  goalName: { fontSize: 17, fontWeight: '700', marginBottom: 12 },
+  track: { height: 8, borderRadius: 999, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 999 },
+  section: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  taskRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 1 },
+  check: { width: 22, height: 22, borderRadius: 7, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   tick: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  taskLbl: { flex: 1, fontSize: 15, color: '#3E2723' },
-  taskDone: { textDecorationLine: 'line-through', color: '#A1887F' },
-  tag: { fontSize: 11, fontWeight: '600', color: '#A1887F', backgroundColor: '#EDE3D8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  taskLbl: { flex: 1, fontSize: 15 },
+  tag: { fontSize: 11, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
 });
 
 export default HomeScreen;

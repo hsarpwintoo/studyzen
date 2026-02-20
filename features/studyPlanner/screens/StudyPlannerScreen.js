@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
 const DEFAULT_TASKS = [
@@ -17,6 +18,7 @@ const todayStr = () =>
 
 const StudyPlannerScreen = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [tasks, setTasks] = useState(DEFAULT_TASKS);
   const [fromFirestore, setFromFirestore] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -67,63 +69,70 @@ const StudyPlannerScreen = () => {
   };
 
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView style={[s.root, { backgroundColor: theme.bg }]}>
       <View style={s.header}>
         <View>
-          <Text style={s.title}>Study Planner</Text>
-          <Text style={s.sub}>{todayStr()}</Text>
+          <Text style={[s.title, { color: theme.brown }]}>Study Planner</Text>
+          <Text style={[s.sub, { color: theme.textSec }]}>{todayStr()}</Text>
         </View>
-        <View style={s.pill}><Text style={s.pillTxt}>{done}/{tasks.length}</Text></View>
+        <View style={[s.pill, { backgroundColor: theme.accent }]}>
+          <Text style={s.pillTxt}>{done}/{tasks.length}</Text>
+        </View>
       </View>
 
       {tasks.length > 0 && (
         <>
-          <View style={s.track}>
-            <View style={[s.fill, { width: (done / tasks.length * 100) + '%' }]} />
+          <View style={[s.track, { backgroundColor: theme.input }]}>
+            <View style={[s.fill, { width: (done / tasks.length * 100) + '%', backgroundColor: theme.accent }]} />
           </View>
-          <Text style={s.pct}>{Math.round((done / tasks.length) * 100)}% complete</Text>
+          <Text style={[s.pct, { color: theme.textSec }]}>{Math.round((done / tasks.length) * 100)}% complete</Text>
         </>
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.list}>
         {tasks.map(t => (
-          <TouchableOpacity key={t.id} style={[s.row, t.done && s.rowDone]} onPress={() => toggle(t)} activeOpacity={0.75}>
-            <Text style={s.time}>{t.time}</Text>
-            <View style={[s.check, t.done && s.checkDone]}>
+          <TouchableOpacity
+            key={t.id}
+            style={[s.row, { backgroundColor: t.done ? theme.input : theme.card }]}
+            onPress={() => toggle(t)}
+            activeOpacity={0.75}
+          >
+            <Text style={[s.time, { color: theme.accent }]}>{t.time}</Text>
+            <View style={[s.check, { borderColor: t.done ? theme.accent : theme.border, backgroundColor: t.done ? theme.accent : 'transparent' }]}>
               {t.done && <Text style={s.tick}>✓</Text>}
             </View>
-            <Text style={[s.lbl, t.done && s.lblDone]}>{t.label}</Text>
-            <Text style={s.tag}>{t.tag}</Text>
+            <Text style={[s.lbl, { color: t.done ? theme.textSec : theme.text, textDecorationLine: t.done ? 'line-through' : 'none' }]}>{t.label}</Text>
+            <Text style={[s.tag, { color: theme.accent, backgroundColor: theme.input }]}>{t.tag}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {showAdd && (
-        <View style={s.addPanel}>
+        <View style={[s.addPanel, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
           <TextInput
-            style={s.input}
+            style={[s.input, { backgroundColor: theme.input, color: theme.text }]}
             placeholder="Task name"
-            placeholderTextColor="#A1887F"
+            placeholderTextColor={theme.textSec}
             value={newLabel}
             onChangeText={setNewLabel}
           />
           <View style={s.inputRow}>
-            <TextInput style={[s.input, s.halfInput]} placeholder="Tag (e.g. Math)" placeholderTextColor="#A1887F" value={newTag} onChangeText={setNewTag} />
-            <TextInput style={[s.input, s.halfInput, { marginLeft: 8 }]} placeholder="Time (e.g. 09:00)" placeholderTextColor="#A1887F" value={newTime} onChangeText={setNewTime} />
+            <TextInput style={[s.input, s.halfInput, { backgroundColor: theme.input, color: theme.text }]} placeholder="Tag (e.g. Math)" placeholderTextColor={theme.textSec} value={newTag} onChangeText={setNewTag} />
+            <TextInput style={[s.input, s.halfInput, { marginLeft: 8, backgroundColor: theme.input, color: theme.text }]} placeholder="Time (e.g. 09:00)" placeholderTextColor={theme.textSec} value={newTime} onChangeText={setNewTime} />
           </View>
           <View style={s.inputRow}>
-            <TouchableOpacity style={[s.addBtn, s.halfInput]} onPress={addTask} activeOpacity={0.85}>
+            <TouchableOpacity style={[s.addBtn, s.halfInput, { backgroundColor: theme.accent }]} onPress={addTask} activeOpacity={0.85}>
               <Text style={s.addBtnTxt}>Add Task</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.cancelBtn, s.halfInput, { marginLeft: 8 }]} onPress={() => { setShowAdd(false); setNewLabel(''); setNewTag(''); setNewTime(''); }} activeOpacity={0.75}>
-              <Text style={s.cancelBtnTxt}>Cancel</Text>
+            <TouchableOpacity style={[s.cancelBtn, s.halfInput, { marginLeft: 8, backgroundColor: theme.input }]} onPress={() => { setShowAdd(false); setNewLabel(''); setNewTag(''); setNewTime(''); }} activeOpacity={0.75}>
+              <Text style={[s.cancelBtnTxt, { color: theme.textSec }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       {!showAdd && (
-        <TouchableOpacity style={s.fab} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
+        <TouchableOpacity style={[s.fab, { backgroundColor: theme.accent }]} onPress={() => setShowAdd(true)} activeOpacity={0.85}>
           <Text style={s.fabIcon}>+</Text>
         </TouchableOpacity>
       )}
@@ -132,35 +141,32 @@ const StudyPlannerScreen = () => {
 };
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5EFE6' },
+  root: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '800', color: '#3E2723' },
-  sub: { fontSize: 13, color: '#A1887F', marginTop: 2 },
-  pill: { backgroundColor: '#6B4226', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  title: { fontSize: 22, fontWeight: '800' },
+  sub: { fontSize: 13, marginTop: 2 },
+  pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
   pillTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  track: { marginHorizontal: 20, height: 6, backgroundColor: '#EDE3D8', borderRadius: 999, overflow: 'hidden', marginBottom: 4 },
-  fill: { height: '100%', backgroundColor: '#C0714F', borderRadius: 999 },
-  pct: { fontSize: 12, color: '#A1887F', paddingHorizontal: 20, marginBottom: 12 },
+  track: { marginHorizontal: 20, height: 6, borderRadius: 999, overflow: 'hidden', marginBottom: 4 },
+  fill: { height: '100%', borderRadius: 999 },
+  pct: { fontSize: 12, paddingHorizontal: 20, marginBottom: 12 },
   list: { paddingHorizontal: 20, paddingBottom: 80 },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FDF8F2', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 1 },
-  rowDone: { opacity: 0.6 },
-  time: { fontSize: 12, fontWeight: '600', color: '#A1887F', width: 44 },
-  check: { width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: '#E0D0C0', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  checkDone: { backgroundColor: '#C0714F', borderColor: '#C0714F' },
+  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 1 },
+  time: { fontSize: 12, fontWeight: '600', width: 44 },
+  check: { width: 22, height: 22, borderRadius: 7, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   tick: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  lbl: { flex: 1, fontSize: 14, fontWeight: '600', color: '#3E2723' },
-  lblDone: { textDecorationLine: 'line-through', color: '#A1887F' },
-  tag: { fontSize: 11, fontWeight: '600', color: '#A1887F', backgroundColor: '#EDE3D8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  fab: { position: 'absolute', bottom: 24, right: 20, width: 56, height: 56, borderRadius: 999, backgroundColor: '#6B4226', alignItems: 'center', justifyContent: 'center', elevation: 6 },
+  lbl: { flex: 1, fontSize: 14, fontWeight: '600' },
+  tag: { fontSize: 11, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  fab: { position: 'absolute', bottom: 24, right: 20, width: 56, height: 56, borderRadius: 999, alignItems: 'center', justifyContent: 'center', elevation: 6 },
   fabIcon: { fontSize: 26, color: '#fff', lineHeight: 28 },
-  addPanel: { backgroundColor: '#FDF8F2', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, elevation: 8, borderTopWidth: 1, borderColor: '#E0D0C0' },
-  input: { backgroundColor: '#EDE3D8', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: '#3E2723', marginBottom: 10 },
+  addPanel: { borderTopLeftRadius: 0, borderTopRightRadius: 0, padding: 16, elevation: 8, borderTopWidth: 1 },
+  input: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, marginBottom: 10 },
   inputRow: { flexDirection: 'row', marginBottom: 0 },
   halfInput: { flex: 1 },
-  addBtn: { backgroundColor: '#6B4226', paddingVertical: 13, borderRadius: 12, alignItems: 'center', marginBottom: 0 },
+  addBtn: { paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
   addBtnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  cancelBtn: { backgroundColor: '#EDE3D8', paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
-  cancelBtnTxt: { color: '#6B4226', fontWeight: '600', fontSize: 14 },
+  cancelBtn: { paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
+  cancelBtnTxt: { fontWeight: '600', fontSize: 14 },
 });
 
 export default StudyPlannerScreen;

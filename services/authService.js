@@ -9,6 +9,7 @@ import {
   signOut,
   sendPasswordResetEmail,
   updateProfile,
+  updatePassword,
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -53,3 +54,11 @@ export const subscribeToAuthChanges = (callback) => onAuthStateChanged(auth, cal
 
 /** Convenience getter for the currently signed-in user (may be null). */
 export const getCurrentUser = () => auth.currentUser;
+
+/** Update the current user's display name. */
+export const updateUserName = (displayName) =>
+  updateProfile(auth.currentUser, { displayName });
+
+/** Update the current user's password. */
+export const updateUserPassword = (newPassword) =>
+  updatePassword(auth.currentUser, newPassword);
