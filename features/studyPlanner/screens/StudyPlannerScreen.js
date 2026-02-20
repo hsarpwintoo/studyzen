@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
 const DEFAULT_TASKS = [
-  { time: '08:00', label: 'Morning review', tag: 'Biology', done: false },
-  { time: '09:30', label: 'Practice problems', tag: 'Math', done: false },
-  { time: '11:00', label: 'Essay research', tag: 'English', done: false },
-  { time: '13:00', label: 'Lunch break', tag: 'Break', done: false },
-  { time: '14:00', label: 'Flashcard review', tag: 'History', done: false },
-  { time: '16:00', label: 'Deep focus session', tag: 'Physics', done: false },
+  { id: 'd1', time: '08:00', label: 'Morning review', tag: 'Biology', done: false },
+  { id: 'd2', time: '09:30', label: 'Practice problems', tag: 'Math', done: false },
+  { id: 'd3', time: '11:00', label: 'Essay research', tag: 'English', done: false },
+  { id: 'd4', time: '13:00', label: 'Lunch break', tag: 'Break', done: false },
+  { id: 'd5', time: '14:00', label: 'Flashcard review', tag: 'History', done: false },
+  { id: 'd6', time: '16:00', label: 'Deep focus session', tag: 'Physics', done: false },
 ];
 
 const todayStr = () =>
@@ -17,8 +17,8 @@ const todayStr = () =>
 
 const StudyPlannerScreen = () => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState(DEFAULT_TASKS);
+  const [fromFirestore, setFromFirestore] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newTag, setNewTag] = useState('');
@@ -27,37 +27,44 @@ const StudyPlannerScreen = () => {
 
   useEffect(() => {
     if (!user?.uid) return;
-    let seeded = false;
-    const unsub = listenToUserCollection(user.uid, 'plannerTasks', async (items) => {
+    const seeded = { current: false };
+    const unsub = listenToUserCollection(user.uid, 'plannerTasks', (items) => {
       if (items.length > 0) {
         setTasks(items.sort((a, b) => (a.time || '').localeCompare(b.time || '')));
-        setLoading(false);
-      } else if (!seeded) {
-        seeded = true;
-        await Promise.all(DEFAULT_TASKS.map(t => addUserDocument(user.uid, 'plannerTasks', t)));
+        setFromFirestore(true);
+      } else if (!seeded.current) {
+        seeded.current = true;
+        Promise.all(DEFAULT_TASKS.map(t =>
+          addUserDocument(user.uid, 'plannerTasks', { time: t.time, label: t.label, tag: t.tag, done: t.done })
+        ));
       }
     });
     return unsub;
   }, [user?.uid]);
 
-  const toggle = (task) => saveUserTask(user.uid, 'plannerTasks', task.id, { done: !task.done });
+  const toggle = (task) => {
+    if (fromFirestore) {
+      saveUserTask(user.uid, 'plannerTasks', task.id, { done: !task.done });
+    } else {
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, done: !t.done } : t));
+    }
+  };
 
   const addTask = async () => {
     if (!newLabel.trim()) return;
-    await addUserDocument(user.uid, 'plannerTasks', {
+    const newTask = {
       label: newLabel.trim(),
       tag: newTag.trim() || 'Study',
       time: newTime.trim() || '--:--',
       done: false,
-    });
+    };
+    if (fromFirestore) {
+      await addUserDocument(user.uid, 'plannerTasks', newTask);
+    } else {
+      setTasks(prev => [...prev, { ...newTask, id: 'l' + Date.now() }]);
+    }
     setNewLabel(''); setNewTag(''); setNewTime(''); setShowAdd(false);
   };
-
-  if (loading) return (
-    <SafeAreaView style={s.root}>
-      <ActivityIndicator style={{ flex: 1 }} size="large" color="#C0714F" />
-    </SafeAreaView>
-  );
 
   return (
     <SafeAreaView style={s.root}>

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { logoutUser } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 import { listenToUserCollection, saveUserTask, addUserDocument } from '../../../services/firestoreService';
 
 const DEFAULT_TASKS = [
-  { label: 'Read Chapter 5', tag: 'Biology', done: false },
-  { label: 'Practice Calculus', tag: 'Math', done: false },
-  { label: 'Essay Outline', tag: 'English', done: false },
-  { label: 'Flashcard Review', tag: 'History', done: false },
+  { id: 'd1', label: 'Read Chapter 5', tag: 'Biology', done: false },
+  { id: 'd2', label: 'Practice Calculus', tag: 'Math', done: false },
+  { id: 'd3', label: 'Essay Outline', tag: 'English', done: false },
+  { id: 'd4', label: 'Flashcard Review', tag: 'History', done: false },
 ];
 
 const todayStr = () =>
@@ -16,8 +16,8 @@ const todayStr = () =>
 
 const HomeScreen = () => {
   const { user, setUser } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState(DEFAULT_TASKS);
+  const [fromFirestore, setFromFirestore] = useState(false);
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Scholar';
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -27,26 +27,28 @@ const HomeScreen = () => {
 
   useEffect(() => {
     if (!user?.uid) return;
-    let seeded = false;
-    const unsub = listenToUserCollection(user.uid, 'homeTasks', async (items) => {
+    const seeded = { current: false };
+    const unsub = listenToUserCollection(user.uid, 'homeTasks', (items) => {
       if (items.length > 0) {
         setTasks(items);
-        setLoading(false);
-      } else if (!seeded) {
-        seeded = true;
-        await Promise.all(DEFAULT_TASKS.map(t => addUserDocument(user.uid, 'homeTasks', t)));
+        setFromFirestore(true);
+      } else if (!seeded.current) {
+        seeded.current = true;
+        Promise.all(DEFAULT_TASKS.map(t =>
+          addUserDocument(user.uid, 'homeTasks', { label: t.label, tag: t.tag, done: t.done })
+        ));
       }
     });
     return unsub;
   }, [user?.uid]);
 
-  const toggleTask = (task) => saveUserTask(user.uid, 'homeTasks', task.id, { done: !task.done });
-
-  if (loading) return (
-    <SafeAreaView style={s.root}>
-      <ActivityIndicator style={{ flex: 1 }} size="large" color="#C0714F" />
-    </SafeAreaView>
-  );
+  const toggleTask = (task) => {
+    if (fromFirestore) {
+      saveUserTask(user.uid, 'homeTasks', task.id, { done: !task.done });
+    } else {
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, done: !t.done } : t));
+    }
+  };
 
   return (
     <SafeAreaView style={s.root}>
