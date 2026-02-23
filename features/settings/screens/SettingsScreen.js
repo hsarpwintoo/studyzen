@@ -25,7 +25,20 @@ const SettingsScreen = () => {
   const [rating, setRating] = useState(0);
   const [ratingDone, setRatingDone] = useState(false);
 
-  const handleLogout = async () => { await logoutUser(); setUser(null); };
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => { await logoutUser(); setUser(null); },
+        },
+      ]
+    );
+  };
 
   const handleSaveProfile = async () => {
     if (!newName.trim()) { Alert.alert('Error', 'Name cannot be empty.'); return; }
