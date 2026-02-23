@@ -25,20 +25,11 @@ const SettingsScreen = () => {
   const [rating, setRating] = useState(0);
   const [ratingDone, setRatingDone] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: async () => { await logoutUser(); setUser(null); },
-        },
-      ]
-    );
-  };
+  // Logout confirmation
+  const [logoutVisible, setLogoutVisible] = useState(false);
+
+  const handleLogout = () => setLogoutVisible(true);
+  const confirmLogout = async () => { setLogoutVisible(false); await logoutUser(); setUser(null); };
 
   const handleSaveProfile = async () => {
     if (!newName.trim()) { Alert.alert('Error', 'Name cannot be empty.'); return; }
@@ -137,6 +128,24 @@ const SettingsScreen = () => {
       </ScrollView>
 
       {/* Edit Profile Modal */}
+      {/* Logout Confirmation Modal */}
+      <Modal visible={logoutVisible} animationType="fade" transparent onRequestClose={() => setLogoutVisible(false)}>
+        <View style={s.logoutOverlay}>
+          <View style={[s.logoutModal, { backgroundColor: t.card }]}>
+            <Text style={[s.logoutModalTitle, { color: t.text }]}>Log Out</Text>
+            <Text style={[s.logoutModalMsg, { color: t.textSec }]}>Are you sure you want to log out?</Text>
+            <View style={s.modalBtns}>
+              <TouchableOpacity style={[s.modalCancel, { backgroundColor: t.input }]} onPress={() => setLogoutVisible(false)} activeOpacity={0.75}>
+                <Text style={[s.modalCancelTxt, { color: t.brown }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.modalSave, { backgroundColor: '#C0392B' }]} onPress={confirmLogout} activeOpacity={0.85}>
+                <Text style={s.modalSaveTxt}>Log Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={editVisible} animationType="slide" transparent onRequestClose={() => setEditVisible(false)}>
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, { backgroundColor: t.card }]}>
@@ -212,6 +221,10 @@ const s = StyleSheet.create({
   modalCancelTxt: { fontSize: 15, fontWeight: '600' },
   modalSave: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   modalSaveTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  logoutOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  logoutModal: { width: '80%', borderRadius: 20, padding: 24, elevation: 16 },
+  logoutModalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+  logoutModalMsg: { fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
 });
 
 export default SettingsScreen;
