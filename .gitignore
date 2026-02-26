@@ -31,3 +31,4 @@ dist/
 *.sublime-project
 *.sublime-workspace
 expo_log.txt
+dist/
