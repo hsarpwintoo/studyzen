@@ -5,6 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 
 const LoginScreen = ({ navigation, route }) => {
   const { setUser } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(route?.params?.mode === 'register');
@@ -21,6 +22,10 @@ const LoginScreen = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     setError('');
+    if (isRegistering && !name.trim()) {
+      setError('Please enter your name.');
+      return;
+    }
     if (!email.trim() || !password.trim()) {
       setError('Please fill in both fields.');
       return;
@@ -36,7 +41,7 @@ const LoginScreen = ({ navigation, route }) => {
     setLoading(true);
     try {
       if (isRegistering) {
-        const newUser = await registerUser(email.trim(), password);
+        const newUser = await registerUser(email.trim(), password, name.trim());
         setUser(newUser); // immediately switch to home screen
       } else {
         const loggedInUser = await loginUser(email.trim(), password);
@@ -71,7 +76,21 @@ const LoginScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Email</Text>
+            {isRegistering && (
+              <>
+                <Text style={styles.label}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Your full name"
+                  placeholderTextColor="#A1887F"
+                  autoCapitalize="words"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </>
+            )}
+
+            <Text style={[styles.label, isRegistering && { marginTop: 16 }]}>Email</Text>
             <TextInput
               style={styles.input}
               placeholder="your@email.com"

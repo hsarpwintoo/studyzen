@@ -4,20 +4,20 @@ import { subscribeToAuthChanges } from '../services/authService';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // null    = signed out (default — shows GetStarted immediately)
-  // object  = signed in
   const [user, setUser] = useState(null);
+  // true until Firebase resolves the persisted session (prevents auth flash)
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged fires immediately with current user or null
     const unsubscribe = subscribeToAuthChanges((firebaseUser) => {
       setUser(firebaseUser ?? null);
+      setLoading(false);
     });
     return unsubscribe;
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

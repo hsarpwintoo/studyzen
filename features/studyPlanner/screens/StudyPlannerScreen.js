@@ -58,14 +58,7 @@ const to12h = (t24) => {
   return `${h}:${mStr} ${ampm}`;
 };
 
-const DEFAULT_TASKS = [
-  { time: '08:00', label: 'Morning review',    tag: 'Biology', done: false },
-  { time: '09:30', label: 'Practice problems',  tag: 'Math',    done: false },
-  { time: '11:00', label: 'Essay research',     tag: 'English', done: false },
-  { time: '13:00', label: 'Lunch break',        tag: 'Break',   done: false },
-  { time: '14:00', label: 'Flashcard review',   tag: 'History', done: false },
-  { time: '16:00', label: 'Deep focus session', tag: 'Physics', done: false },
-];
+
 
 // ─── component ───────────────────────────────────────────────────────────────
 const StudyPlannerScreen = () => {
@@ -95,7 +88,6 @@ const StudyPlannerScreen = () => {
   // ── Firestore listener ───────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) return;
-    const seeded   = { current: false };
     const migrated = { current: false };
 
     const unsub = listenToUserCollection(
@@ -115,14 +107,6 @@ const StudyPlannerScreen = () => {
         // Patch undated items in local memory immediately
         const items = rawItems.map(t => t.date ? t : { ...t, date: todayKey });
         setAllTasks(items);
-
-        // Seed today if empty for this user
-        if (!seeded.current && !items.some(t => t.date === todayKey)) {
-          seeded.current = true;
-          DEFAULT_TASKS.forEach(t =>
-            addUserDocument(user.uid, 'plannerTasks', { ...t, date: todayKey })
-          );
-        }
       },
       (err) => console.error('plannerTasks error:', err.code, err.message)
     );

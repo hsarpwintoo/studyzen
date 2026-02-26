@@ -1,12 +1,18 @@
 import React from 'react';
-import { TasksProvider } from './context/TasksContext';  // Adjust the import path as necessary
-import TasksScreen from './screens/TasksScreen';  // Adjust the import path as necessary
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import RootNavigator from './navigation/RootNavigator';
 
 const App = () => {
   return (
-    <TasksProvider>
-      <TasksScreen />
-    </TasksProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <RootNavigator />
+        </ThemeProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 };
 

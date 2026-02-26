@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import FocusTimerScreen from '../features/focusTimer/screens/FocusTimerScreen';
 import StudyPlannerScreen from '../features/studyPlanner/screens/StudyPlannerScreen';
@@ -24,7 +25,7 @@ const AppNavigator = () => {
   const ActiveScreen = SCREENS[active];
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]} edges={['top']}>
       <View style={styles.screen}>
         {active === 'Home'
           ? <HomeScreen navigateTo={setActive} />

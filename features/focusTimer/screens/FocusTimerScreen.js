@@ -66,7 +66,7 @@ const FocusTimerScreen = () => {
     return unsub;
   }, [user?.uid]);
 
-  // Request notification permission + Android channel
+  // Request notification permission + Android channel + audio mode
   useEffect(() => {
     Notifications.requestPermissionsAsync().catch(() => {});
     if (Platform.OS === 'android') {
@@ -77,6 +77,12 @@ const FocusTimerScreen = () => {
         vibrationPattern: [0, 300, 100, 300],
       }).catch(() => {});
     }
+    // Allow sound to play through speaker even when ringer is silent
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+    }).catch(() => {});
   }, []);
 
   // Watch for timer completion
@@ -98,9 +104,9 @@ const FocusTimerScreen = () => {
         },
         trigger: null,
       }).catch(() => {});
-      // Play in-app sound via expo-av
+      // Play cheerful in-app completion chime via expo-av
       Audio.Sound.createAsync(
-        { uri: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3' },
+        require('../../../assets/sounds/complete.wav'),
         { shouldPlay: true, volume: 1.0 }
       ).then(({ sound }) => {
         sound.setOnPlaybackStatusUpdate(status => {

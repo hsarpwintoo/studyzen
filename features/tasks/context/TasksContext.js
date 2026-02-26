@@ -1,26 +1,38 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { realtimeDbService } from '../../services/realtimeDbService';
+import { pushData, updateData, removeData, subscribeToPath } from '../../../services/realtimeDbService';
+import { useAuth } from '../../../context/AuthContext';
 
 const TasksContext = createContext();
 
+const TASKS_PATH = (uid) => `users/${uid}/tasks`;
+
 export const TasksProvider = ({ children }) => {
+    const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
 
     useEffect(() => {
-        const unsubscribe = realtimeDbService.subscribeToTasks(setTasks);
+        if (!user) { setTasks([]); return; }
+        const unsubscribe = subscribeToPath(TASKS_PATH(user.uid), (data) => {
+            if (!data) { setTasks([]); return; }
+            const list = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+            setTasks(list);
+        });
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     const addTask = async (task) => {
-        await realtimeDbService.addTask(task);
+        if (!user) return;
+        await pushData(TASKS_PATH(user.uid), { ...task, createdAt: Date.now() });
     };
 
     const updateTask = async (taskId, updatedTask) => {
-        await realtimeDbService.updateTask(taskId, updatedTask);
+        if (!user) return;
+        await updateData(`${TASKS_PATH(user.uid)}/${taskId}`, updatedTask);
     };
 
     const deleteTask = async (taskId) => {
-        await realtimeDbService.deleteTask(taskId);
+        if (!user) return;
+        await removeData(`${TASKS_PATH(user.uid)}/${taskId}`);
     };
 
     return (

@@ -8,7 +8,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import {
   listenToUserCollection, saveUserTask,
-  addUserDocument,
 } from '../../../services/firestoreService';
 
 const { width: SW } = Dimensions.get('window');
@@ -32,12 +31,6 @@ const todayStr = () =>
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
-const DEFAULT_UPCOMING = [
-  { label: 'Calculus II — Chapter 4', tag: 'Math',    time: '30m', done: false },
-  { label: 'History Essay Draft',      tag: 'History', time: '45m', done: false },
-  { label: 'Physics Problem Set',      tag: 'Physics', time: '1h',  done: false },
-];
-
 const HomeScreen = ({ navigateTo }) => {
   const { user, setUser } = useAuth();
   const { theme } = useTheme();
@@ -53,7 +46,6 @@ const HomeScreen = ({ navigateTo }) => {
   useEffect(() => {
     if (!user?.uid) return;
     const migrated = { current: false };
-    const seeded   = { current: false };
     const unsub = listenToUserCollection(
       user.uid, 'plannerTasks',
       (rawItems) => {
@@ -66,12 +58,6 @@ const HomeScreen = ({ navigateTo }) => {
         const items = rawItems.map(t => t.date ? t : { ...t, date: todayKey });
         const todayItems = items.filter(t => t.date === todayKey);
         setPlannerTasks(todayItems);
-        if (!seeded.current && todayItems.length === 0) {
-          seeded.current = true;
-          DEFAULT_UPCOMING.forEach(t =>
-            addUserDocument(user.uid, 'plannerTasks', { ...t, date: todayKey })
-          );
-        }
       },
       (err) => console.error('home plannerTasks err:', err.code, err.message)
     );
@@ -123,7 +109,7 @@ const HomeScreen = ({ navigateTo }) => {
             <Text style={s.name}>{displayName} 👋</Text>
             <Text style={s.date}>{todayStr()}</Text>
           </View>
-          <TouchableOpacity style={s.avatar} onPress={handleLogout} activeOpacity={0.8}>
+          <TouchableOpacity style={s.avatar} onPress={() => navigateTo?.('Settings')} activeOpacity={0.8}>
             <Text style={s.avatarTxt}>{initials}</Text>
           </TouchableOpacity>
         </View>

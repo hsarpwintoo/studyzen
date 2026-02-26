@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTabletMode": true },
+    "ios": { },
     "android": { "adaptiveIcon": { "backgroundColor": "#F5EFE6" } },
     "web": {}
   }
