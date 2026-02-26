@@ -49,6 +49,10 @@ const SettingsScreen = () => {
     try {
       await updateUserName(newName.trim());
       if (newPassword) await updateUserPassword(newPassword);
+      // Sync updated name to Firestore users collection
+      if (user?.uid) {
+        await setDocument('users', user.uid, { name: newName.trim(), email: user.email });
+      }
       setUser({ ...user, displayName: newName.trim() });
       setEditVisible(false);
       setNewPassword('');

@@ -12,7 +12,8 @@ import {
   updatePassword,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 /**
  * Register a new user with email and password.
@@ -23,6 +24,12 @@ export const registerUser = async (email, password, displayName = '') => {
   if (displayName) {
     await updateProfile(userCredential.user, { displayName });
   }
+  // Save profile to Firestore so it's visible in the database
+  await setDoc(doc(db, 'users', userCredential.user.uid), {
+    name: displayName || '',
+    email,
+    createdAt: serverTimestamp(),
+  });
   return userCredential.user;
 };
 
