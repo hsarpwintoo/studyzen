@@ -25,7 +25,11 @@ const AppNavigator = () => {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]}>
-      <View style={styles.screen}><ActiveScreen /></View>
+      <View style={styles.screen}>
+        {active === 'Home'
+          ? <HomeScreen navigateTo={setActive} />
+          : <ActiveScreen />}
+      </View>
       <View style={[styles.tabBar, { backgroundColor: theme.tabBg, borderTopColor: theme.tabBorder }]}>
         {TABS.map((tab) => {
           const focused = active === tab.key;

@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, SafeAreaView, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, SafeAreaView, TextInput, Alert, Modal, Platform } from 'react-native';
 import { logoutUser, updateUserName, updateUserPassword } from '../../../services/authService';
+
+// Cross-platform alert helper (Alert.alert is a no-op on web)
+const crossAlert = (title, msg) => {
+  if (Platform.OS === 'web') {
+    window.alert(msg ? `${title}\n\n${msg}` : title);
+  } else {
+    Alert.alert(title, msg);
+  }
+};
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { setDocument } from '../../../services/firestoreService';
@@ -20,6 +29,7 @@ const SettingsScreen = () => {
   const [newName, setNewName] = useState(displayName);
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   // Star rating
   const [rating, setRating] = useState(0);
@@ -32,8 +42,9 @@ const SettingsScreen = () => {
   const confirmLogout = async () => { setLogoutVisible(false); await logoutUser(); setUser(null); };
 
   const handleSaveProfile = async () => {
-    if (!newName.trim()) { Alert.alert('Error', 'Name cannot be empty.'); return; }
-    if (newPassword && newPassword.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters.'); return; }
+    if (!newName.trim()) { setSaveError('Name cannot be empty.'); return; }
+    if (newPassword && newPassword.length < 6) { setSaveError('Password must be at least 6 characters.'); return; }
+    setSaveError('');
     setSaving(true);
     try {
       await updateUserName(newName.trim());
@@ -41,9 +52,9 @@ const SettingsScreen = () => {
       setUser({ ...user, displayName: newName.trim() });
       setEditVisible(false);
       setNewPassword('');
-      Alert.alert('Saved', 'Your profile has been updated.');
+      crossAlert('Saved', 'Your profile has been updated.');
     } catch (e) {
-      Alert.alert('Error', e.message);
+      setSaveError(e.message);
     } finally {
       setSaving(false);
     }
@@ -55,7 +66,8 @@ const SettingsScreen = () => {
     if (user?.uid) {
       await setDocument('ratings', user.uid, { rating: stars, email: user.email });
     }
-    Alert.alert('Thank you!', `You rated StudyZen ${stars} star${stars > 1 ? 's' : ''}! ⭐`);
+    // Inline message shown via ratingDone state; crossAlert for extra feedback
+    crossAlert('Thank you!', `You rated StudyZen ${stars} star${stars > 1 ? 's' : ''}! ⭐`);
   };
 
   const t = theme;
@@ -74,7 +86,7 @@ const SettingsScreen = () => {
             <Text style={[s.profileName, { color: t.text }]}>{displayName}</Text>
             <Text style={[s.profileEmail, { color: t.textSec }]}>{user?.email || ''}</Text>
           </View>
-          <TouchableOpacity style={[s.editBtn, { backgroundColor: t.input }]} onPress={() => { setNewName(displayName); setEditVisible(true); }} activeOpacity={0.8}>
+          <TouchableOpacity style={[s.editBtn, { backgroundColor: t.input }]} onPress={() => { setNewName(displayName); setSaveError(''); setEditVisible(true); }} activeOpacity={0.8}>
             <Text style={[s.editBtnTxt, { color: t.brown }]}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -160,6 +172,7 @@ const SettingsScreen = () => {
               placeholder="Your name"
             />
 
+            {saveError ? <Text style={s.saveErrTxt}>{saveError}</Text> : null}
             <Text style={[s.inputLabel, { color: t.textSec }]}>New Password</Text>
             <TextInput
               style={[s.input, { backgroundColor: t.input, color: t.text, borderColor: t.border }]}
@@ -225,6 +238,7 @@ const s = StyleSheet.create({
   logoutModal: { width: '80%', borderRadius: 20, padding: 24, elevation: 16 },
   logoutModalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
   logoutModalMsg: { fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+  saveErrTxt: { color: '#C0392B', fontSize: 13, marginBottom: 10, fontWeight: '600' },
 });
 
 export default SettingsScreen;

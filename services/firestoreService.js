@@ -120,10 +120,11 @@ export const subscribeToCollection = (collectionName, filters = [], onData, onEr
 // ─── Per-User Collection Helpers ─────────────────────────────────────────────
 
 /** Real-time listener for a user's sub-collection. Returns unsubscribe fn. */
-export const listenToUserCollection = (uid, subcollection, callback) =>
+export const listenToUserCollection = (uid, subcollection, callback, onError) =>
   onSnapshot(
     collection(db, 'users', uid, subcollection),
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    onError || ((err) => console.error('listenToUserCollection error:', err.code, err.message))
   );
 
 /** Create or merge-update a document in a user's sub-collection. */

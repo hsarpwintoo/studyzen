@@ -1,24 +1,36 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
 import { loginUser, registerUser } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const { setUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(route?.params?.mode === 'register');
   const [loading, setLoading] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passFocused, setPassFocused] = useState(false);
+  const [error, setError] = useState('');
+
+  // Update mode if navigation params change (e.g. pressing back and re-navigating)
+  useEffect(() => {
+    if (route?.params?.mode) {
+      setIsRegistering(route.params.mode === 'register');
+      setError('');
+    }
+  }, [route?.params?.mode]);
 
   const handleSubmit = async () => {
+    setError('');
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Oops', 'Please fill in both fields.');
+      setError('Please fill in both fields.');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      setError('Please enter a valid email address.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+      setError('Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
@@ -30,8 +42,7 @@ const LoginScreen = ({ navigation }) => {
         const loggedInUser = await loginUser(email.trim(), password);
         setUser(loggedInUser); // immediately switch to home screen
       }
-      // Auth state listener in App.js will automatically switch to HomeScreen
-    } catch (error) {
+    } catch (err) {
       // Map Firebase error codes to friendly messages
       const msg = {
         'auth/invalid-email': 'Invalid email address.',
@@ -39,11 +50,11 @@ const LoginScreen = ({ navigation }) => {
         'auth/wrong-password': 'Incorrect password. Please try again.',
         'auth/invalid-credential': 'Invalid email or password. Please check and try again.',
         'auth/email-already-in-use': 'This email is already registered. Try signing in.',
-        'auth/operation-not-allowed': 'Email/Password login is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.',
+        'auth/operation-not-allowed': 'Email/Password sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in method.',
         'auth/network-request-failed': 'Network error. Check your internet connection.',
         'auth/too-many-requests': 'Too many failed attempts. Try again later.',
-      }[error.code] || error.message;
-      Alert.alert('Login Failed', msg);
+      }[err.code] || err.message;
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -80,6 +91,8 @@ const LoginScreen = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
             />
+
+            {error ? <Text style={styles.errorTxt}>{error}</Text> : null}
 
             <TouchableOpacity
               style={[styles.btn, loading && { opacity: 0.65 }]}
@@ -122,6 +135,7 @@ const styles = StyleSheet.create({
   toggle: { alignItems: 'center', paddingVertical: 8 },
   toggleText: { fontSize: 14, color: '#A1887F' },
   toggleBold: { color: '#C0714F', fontWeight: '600' },
+  errorTxt: { color: '#C0392B', fontSize: 13, fontWeight: '600', marginTop: 12, marginBottom: 2, textAlign: 'center' },
 });
 
 export default LoginScreen;

@@ -1,12 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
+  ScrollView, Dimensions, Modal, Vibration, Platform,
+} from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { Audio } from 'expo-av';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { listenToUserCollection, addUserDocument } from '../../../services/firestoreService';
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+// Show in-app alert even while app is foregrounded
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+const COMPLETION_MESSAGES = [
+  "Amazing work! Every minute of focus builds your future. 🌟",
+  "Session done! Consistency is the key to mastery. 💪",
+  "You crushed it! Rest a moment, then keep going. 🔥",
+  "Fantastic focus! Your brain is getting stronger. 🧠",
+  "Well done! Progress is progress, no matter how small. ✅",
+];
+
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 const W = Dimensions.get('window').width;
-const RING = W * 0.62;
+const RING = Math.min(W * 0.52, 190);
 const PRESETS = [
   { label: 'Focus', mins: 25 },
   { label: 'Short', mins: 5 },
@@ -22,17 +47,68 @@ const FocusTimerScreen = () => {
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
-  const tick = useRef(null);
+  const tick         = useRef(null);
   const completedRef = useRef(false);
-  const customMinsRef = useRef(25);
+  const customMinsRef  = useRef(25);
+  const presetLabelRef = useRef(PRESETS[0].label);
+  const justFinishedRef = useRef(false);
+
+  const [showDoneModal, setShowDoneModal] = useState(false);
+  const [doneMsg, setDoneMsg] = useState('');
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsub = listenToUserCollection(user.uid, 'sessions', (items) => {
-      setSessionCount(items.filter(s => s.date === todayKey()).length);
-    });
+    const unsub = listenToUserCollection(
+      user.uid, 'sessions',
+      (items) => setSessionCount(items.filter(s => s.date === todayKey()).length),
+      (err) => console.error('sessions listener error:', err.code, err.message)
+    );
     return unsub;
   }, [user?.uid]);
+
+  // Request notification permission + Android channel
+  useEffect(() => {
+    Notifications.requestPermissionsAsync().catch(() => {});
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('studyzen-timer', {
+        name: 'Study Timer',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+        vibrationPattern: [0, 300, 100, 300],
+      }).catch(() => {});
+    }
+  }, []);
+
+  // Watch for timer completion
+  useEffect(() => {
+    if (!running && justFinishedRef.current) {
+      justFinishedRef.current = false;
+      const msg = COMPLETION_MESSAGES[Math.floor(Math.random() * COMPLETION_MESSAGES.length)];
+      setDoneMsg(msg);
+      setShowDoneModal(true);
+      // Vibrate
+      Vibration.vibrate([0, 400, 100, 400, 100, 600]);
+      // System notification (plays notification sound via OS)
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🎉 Session Complete!',
+          body: `${customMinsRef.current}-min ${presetLabelRef.current} session done. ${msg}`,
+          sound: 'default',
+          ...(Platform.OS === 'android' ? { channelId: 'studyzen-timer' } : {}),
+        },
+        trigger: null,
+      }).catch(() => {});
+      // Play in-app sound via expo-av
+      Audio.Sound.createAsync(
+        { uri: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3' },
+        { shouldPlay: true, volume: 1.0 }
+      ).then(({ sound }) => {
+        sound.setOnPlaybackStatusUpdate(status => {
+          if (status.didJustFinish) sound.unloadAsync();
+        });
+      }).catch(() => {});
+    }
+  }, [running]);
 
   useEffect(() => {
     if (running) {
@@ -46,9 +122,10 @@ const FocusTimerScreen = () => {
                 setRunning(false);
                 if (!completedRef.current && user?.uid) {
                   completedRef.current = true;
+                  justFinishedRef.current = true;
                   addUserDocument(user.uid, 'sessions', {
                     date: todayKey(), type: preset.label, duration: customMinsRef.current,
-                  });
+                  }).catch(e => console.error('save session error:', e.code, e.message));
                 }
                 return 0;
               }
@@ -68,6 +145,7 @@ const FocusTimerScreen = () => {
   const selectPreset = (p) => {
     setRunning(false); setPreset(p);
     setCustomMins(p.mins); customMinsRef.current = p.mins;
+    presetLabelRef.current = p.label;
     setMinutes(p.mins); setSeconds(0);
   };
 
@@ -82,7 +160,13 @@ const FocusTimerScreen = () => {
   const pad = n => String(n).padStart(2, '0');
 
   return (
-    <SafeAreaView style={[s.root, { backgroundColor: theme.bg }]}>
+    <SafeAreaView style={[s.safeArea, { backgroundColor: theme.bg }]}>
+      <ScrollView
+        contentContainerStyle={[s.root, { backgroundColor: theme.bg }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={true}
+      >
       <Text style={[s.title, { color: theme.text }]}>Focus Timer</Text>
 
       <View style={s.pills}>
@@ -143,12 +227,49 @@ const FocusTimerScreen = () => {
           ))}
         </View>
       </View>
+      <View style={{ height: 32 }} />
+      </ScrollView>
+
+      {/* ── Completion Modal ── */}
+      <Modal
+        visible={showDoneModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDoneModal(false)}
+      >
+        <View style={s.overlay}>
+          <View style={[s.doneCard, { backgroundColor: theme.card }]}>
+            <Text style={s.doneEmoji}>🎉</Text>
+            <Text style={[s.doneTitle, { color: theme.text }]}>Session Complete!</Text>
+            <Text style={[s.doneSub, { color: theme.textSec }]}>
+              {customMinsRef.current} min · {presetLabelRef.current} session
+            </Text>
+            <Text style={[s.doneMsg, { color: theme.textSec }]}>{doneMsg}</Text>
+            <TouchableOpacity
+              style={[s.doneBtn, { backgroundColor: theme.brown }]}
+              onPress={() => { setShowDoneModal(false); setRunning(false); setMinutes(customMins); setSeconds(0); completedRef.current = false; }}
+              activeOpacity={0.85}
+            >
+              <Text style={s.doneBtnTxt}>Start Another ▶</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.doneBtnSec, { backgroundColor: theme.input }]}
+              onPress={() => setShowDoneModal(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={[s.doneBtnSecTxt, { color: theme.textSec }]}>Take a Break ☕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
 
 const s = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', paddingTop: 16 },
+  safeArea: { flex: 1 },
+  root: { alignItems: 'center', paddingTop: 16, paddingBottom: 20, flexGrow: 1 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 20 },
   pills: { flexDirection: 'row', gap: 8, marginBottom: 24 },
   pill: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 999 },
@@ -171,6 +292,18 @@ const s = StyleSheet.create({
   sessionsTxt: { fontSize: 13 },
   dots: { flexDirection: 'row', gap: 8 },
   dot: { width: 12, height: 12, borderRadius: 6 },
+
+  // Completion modal
+  overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  doneCard:     { width: '100%', borderRadius: 24, padding: 28, alignItems: 'center', elevation: 16 },
+  doneEmoji:    { fontSize: 56, marginBottom: 12 },
+  doneTitle:    { fontSize: 24, fontWeight: '800', marginBottom: 6 },
+  doneSub:      { fontSize: 13, fontWeight: '600', marginBottom: 12 },
+  doneMsg:      { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  doneBtn:      { width: '100%', paddingVertical: 15, borderRadius: 14, alignItems: 'center', marginBottom: 10, elevation: 3 },
+  doneBtnTxt:   { color: '#fff', fontWeight: '800', fontSize: 15 },
+  doneBtnSec:   { width: '100%', paddingVertical: 13, borderRadius: 14, alignItems: 'center' },
+  doneBtnSecTxt:{ fontSize: 14, fontWeight: '600' },
 });
 
 export default FocusTimerScreen;

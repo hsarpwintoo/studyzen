@@ -14,10 +14,10 @@ const GetStartedScreen = ({ navigation }) => (
     </View>
 
     <View style={styles.bottom}>
-      <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Login')} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Login', { mode: 'register' })} activeOpacity={0.85}>
         <Text style={styles.btnText}>Get Started</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
+      <TouchableOpacity onPress={() => navigation.navigate('Login', { mode: 'login' })} activeOpacity={0.7}>
         <Text style={styles.signinText}>Already have an account? <Text style={styles.signinBold}>Sign In</Text></Text>
       </TouchableOpacity>
     </View>
