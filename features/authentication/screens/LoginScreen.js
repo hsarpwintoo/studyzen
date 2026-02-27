@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Alert } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import { loginUser, registerUser, signInWithGoogle } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -20,7 +21,7 @@ WebBrowser.maybeCompleteAuthSession();
 // 5. Firebase Console → Authentication → Settings → Authorized domains
 //    → add:  auth.expo.io
 // ─────────────────────────────────────────────────────────────────────────────
-const GOOGLE_WEB_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = '657475575172-asnlknn49lrcgbid8p2fpq4i970el3a1.apps.googleusercontent.com';
 
 const LoginScreen = ({ navigation, route }) => {
   const { setUser } = useAuth();
@@ -33,8 +34,10 @@ const LoginScreen = ({ navigation, route }) => {
   const [error, setError] = useState('');
 
   // ── Google OAuth request ──────────────────────────────────────────────────
+  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
     shouldAutoExchangeCode: true,
   });
 
@@ -67,7 +70,17 @@ const LoginScreen = ({ navigation, route }) => {
 
   const handleGoogleSignIn = () => {
     if (GOOGLE_WEB_CLIENT_ID.startsWith('YOUR_GOOGLE')) {
-      setError('Google Sign-In not configured yet.\nSee the setup instructions in LoginScreen.js.');
+      setError('Google Sign-In not configured yet.');
+      return;
+    }
+    // DEV HELPER: shows the exact URI you need to add to Google Cloud Console
+    // → Authorized redirect URIs. Remove this block once Google Sign-In works.
+    if (__DEV__) {
+      Alert.alert(
+        '📋 Add this to Google Cloud Console',
+        `Authorized redirect URIs:\n\n${redirectUri}\n\n(Google Auth Platform → your Web client → Authorized redirect URIs)`,
+        [{ text: 'OK, got it', onPress: () => promptAsync() }]
+      );
       return;
     }
     setError('');
