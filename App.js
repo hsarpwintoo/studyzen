@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 import RootNavigator from './navigation/RootNavigator';
 
 const App = () => {
@@ -9,7 +10,9 @@ const App = () => {
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider>
-          <RootNavigator />
+          <SettingsProvider>
+            <RootNavigator />
+          </SettingsProvider>
         </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>

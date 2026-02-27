@@ -12,17 +12,16 @@ const crossAlert = (title, msg) => {
 };
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { useSettings } from '../../../context/SettingsContext';
 import { setDocument } from '../../../services/firestoreService';
 
 const SettingsScreen = () => {
   const { user, setUser } = useAuth();
   const { theme, isDark, toggleDark } = useTheme();
+  const { notifEnabled, soundsEnabled, setNotifEnabled, setSoundsEnabled } = useSettings();
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Scholar';
   const initials = displayName.slice(0, 2).toUpperCase();
-
-  const [notif, setNotif] = useState(true);
-  const [sounds, setSounds] = useState(true);
 
   // Profile edit
   const [editVisible, setEditVisible] = useState(false);
@@ -101,13 +100,13 @@ const SettingsScreen = () => {
           <View style={s.row}>
             <View style={[s.rowIcon, { backgroundColor: t.input }]}><Text style={s.rowIconTxt}>🔔</Text></View>
             <Text style={[s.rowLabel, { color: t.text, flex: 1 }]}>Push Notifications</Text>
-            <Switch value={notif} onValueChange={setNotif} trackColor={{ false: t.border, true: t.accent }} thumbColor="#fff" />
+            <Switch value={notifEnabled} onValueChange={setNotifEnabled} trackColor={{ false: t.border, true: t.accent }} thumbColor="#fff" />
           </View>
           <View style={[s.sep, { backgroundColor: t.sep }]} />
           <View style={s.row}>
             <View style={[s.rowIcon, { backgroundColor: t.input }]}><Text style={s.rowIconTxt}>🔊</Text></View>
             <Text style={[s.rowLabel, { color: t.text, flex: 1 }]}>Timer Sounds</Text>
-            <Switch value={sounds} onValueChange={setSounds} trackColor={{ false: t.border, true: t.accent }} thumbColor="#fff" />
+            <Switch value={soundsEnabled} onValueChange={setSoundsEnabled} trackColor={{ false: t.border, true: t.accent }} thumbColor="#fff" />
           </View>
         </View>
 

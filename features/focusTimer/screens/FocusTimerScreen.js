@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { useSettings } from '../../../context/SettingsContext';
 import { listenToUserCollection, addUserDocument } from '../../../services/firestoreService';
 
 // Show in-app alert even while app is foregrounded
@@ -41,6 +42,7 @@ const PRESETS = [
 const FocusTimerScreen = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { soundsEnabled } = useSettings();
   const [preset, setPreset] = useState(PRESETS[0]);
   const [customMins, setCustomMins] = useState(25);
   const [minutes, setMinutes] = useState(25);
@@ -115,6 +117,21 @@ const FocusTimerScreen = () => {
       }).catch(() => {});
     }
   }, [running]);
+
+  // Tick sound for last 3 seconds of countdown
+  useEffect(() => {
+    if (!running || !soundsEnabled) return;
+    if (minutes === 0 && seconds >= 1 && seconds <= 3) {
+      Audio.Sound.createAsync(
+        require('../../../assets/sounds/tick.wav'),
+        { shouldPlay: true, volume: 0.9 }
+      ).then(({ sound }) => {
+        sound.setOnPlaybackStatusUpdate(status => {
+          if (status.didJustFinish) sound.unloadAsync();
+        });
+      }).catch(() => {});
+    }
+  }, [seconds, minutes, running, soundsEnabled]);
 
   useEffect(() => {
     if (running) {

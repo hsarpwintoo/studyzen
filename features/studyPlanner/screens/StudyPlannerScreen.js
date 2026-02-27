@@ -25,6 +25,7 @@ const crossAlert = (title, message, buttons) => {
 };
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { useSettings } from '../../../context/SettingsContext';
 import {
   listenToUserCollection, saveUserTask,
   addUserDocument, deleteUserDocument,
@@ -74,6 +75,7 @@ const REMINDER_OPTS = [
 const StudyPlannerScreen = () => {
   const { user }  = useAuth();
   const { theme } = useTheme();
+  const { notifEnabled } = useSettings();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [allTasks,  setAllTasks]  = useState([]);
@@ -168,7 +170,7 @@ const StudyPlannerScreen = () => {
 
     // Schedule reminder notification if task has a valid time and reminder is set
     let notifId = null;
-    if (reminderMins > 0 && time !== '--:--') {
+    if (notifEnabled && reminderMins > 0 && time !== '--:--') {
       try {
         const { status } = await Notifications.requestPermissionsAsync();
         if (status === 'granted') {
