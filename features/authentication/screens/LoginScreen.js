@@ -1,27 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, SafeAreaView, Alert } from 'react-native';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import { loginUser, registerUser, signInWithGoogle } from '../../../services/authService';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
+  ScrollView, SafeAreaView,
+} from 'react-native';
+import { loginUser, registerUser } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
-
-// Required so Android/iOS can return to the app after Google consent
-WebBrowser.maybeCompleteAuthSession();
-
-// ─── HOW TO ENABLE GOOGLE SIGN-IN ────────────────────────────────────────────
-// 1. Firebase Console → Authentication → Sign-in method → Google → Enable
-// 2. Copy your Web Client ID from:
-//    Firebase Console → Authentication → Sign-in providers → Google
-//    → Web SDK configuration → Web client ID
-// 3. Paste it below (replace the placeholder string)
-// 4. Google Cloud Console → APIs & Services → Credentials → the
-//    "Web client (auto created by Google Service)" → Authorized redirect URIs
-//    → add:  https://auth.expo.io/@YOUR_EXPO_USERNAME/studyzen
-// 5. Firebase Console → Authentication → Settings → Authorized domains
-//    → add:  auth.expo.io
-// ─────────────────────────────────────────────────────────────────────────────
-const GOOGLE_WEB_CLIENT_ID = '657475575172-asnlknn49lrcgbid8p2fpq4i970el3a1.apps.googleusercontent.com';
 
 const LoginScreen = ({ navigation, route }) => {
   const { setUser } = useAuth();
@@ -33,14 +17,6 @@ const LoginScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Google OAuth request ──────────────────────────────────────────────────
-  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri,
-    shouldAutoExchangeCode: true,
-  });
-
   // Update sign-in / register mode when navigation param changes
   useEffect(() => {
     if (route?.params?.mode) {
@@ -48,44 +24,6 @@ const LoginScreen = ({ navigation, route }) => {
       setError('');
     }
   }, [route?.params?.mode]);
-
-  // Handle Google OAuth response
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.authentication?.idToken;
-      const accessToken = response.authentication?.accessToken;
-      if (idToken || accessToken) {
-        setLoading(true);
-        signInWithGoogle(idToken, accessToken)
-          .then(user => setUser(user))
-          .catch(err => setError(err.message || 'Google sign-in failed.'))
-          .finally(() => setLoading(false));
-      } else {
-        setError('Google sign-in returned no token. Check your Web Client ID setup.');
-      }
-    } else if (response?.type === 'error') {
-      setError('Google sign-in was cancelled or failed. Please try again.');
-    }
-  }, [response]);
-
-  const handleGoogleSignIn = () => {
-    if (GOOGLE_WEB_CLIENT_ID.startsWith('YOUR_GOOGLE')) {
-      setError('Google Sign-In not configured yet.');
-      return;
-    }
-    // DEV HELPER: shows the exact URI you need to add to Google Cloud Console
-    // → Authorized redirect URIs. Remove this block once Google Sign-In works.
-    if (__DEV__) {
-      Alert.alert(
-        '📋 Add this to Google Cloud Console',
-        `Authorized redirect URIs:\n\n${redirectUri}\n\n(Google Auth Platform → your Web client → Authorized redirect URIs)`,
-        [{ text: 'OK, got it', onPress: () => promptAsync() }]
-      );
-      return;
-    }
-    setError('');
-    promptAsync();
-  };
 
   const handleSubmit = async () => {
     setError('');
@@ -202,23 +140,6 @@ const LoginScreen = ({ navigation, route }) => {
               }
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerTxt}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign-In button */}
-            <TouchableOpacity
-              style={[styles.googleBtn, (loading || !request) && { opacity: 0.55 }]}
-              onPress={handleGoogleSignIn}
-              activeOpacity={0.85}
-              disabled={loading}
-            >
-              <Text style={styles.googleIcon}>G</Text>
-              <Text style={styles.googleTxt}>Continue with Google</Text>
-            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.toggle} onPress={() => { setIsRegistering(p => !p); setError(''); }}>
@@ -251,14 +172,6 @@ const styles = StyleSheet.create({
   eyeIcon: { fontSize: 18 },
   btn: { backgroundColor: '#6B4226', paddingVertical: 15, borderRadius: 14, alignItems: 'center', marginTop: 20 },
   btnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  // Divider
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 18 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#E0D0C0' },
-  dividerTxt: { marginHorizontal: 12, fontSize: 13, color: '#A1887F', fontWeight: '500' },
-  // Google button
-  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 14, paddingVertical: 13, borderWidth: 1.5, borderColor: '#E0D0C0' },
-  googleIcon: { fontSize: 18, fontWeight: '800', color: '#EA4335', marginRight: 10, letterSpacing: -0.5 },
-  googleTxt: { fontSize: 15, fontWeight: '600', color: '#3E2723' },
   toggle: { alignItems: 'center', paddingVertical: 8 },
   toggleText: { fontSize: 14, color: '#A1887F' },
   toggleBold: { color: '#C0714F', fontWeight: '600' },
