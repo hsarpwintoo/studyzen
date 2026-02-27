@@ -4,6 +4,7 @@ import {
   SafeAreaView, TextInput, Alert, KeyboardAvoidingView,
   Platform, Dimensions, Modal,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 // ─── cross-platform alert (Alert.alert is a no-op on web) ────────────────────
 const crossAlert = (title, message, buttons) => {
@@ -60,6 +61,15 @@ const to12h = (t24) => {
 
 
 
+// ─── reminder options ────────────────────────────────────────────────────────
+const REMINDER_OPTS = [
+  { label: 'None', value: 0 },
+  { label: '5m',   value: 5 },
+  { label: '10m',  value: 10 },
+  { label: '15m',  value: 15 },
+  { label: '30m',  value: 30 },
+];
+
 // ─── component ───────────────────────────────────────────────────────────────
 const StudyPlannerScreen = () => {
   const { user }  = useAuth();
@@ -77,6 +87,7 @@ const StudyPlannerScreen = () => {
   const [newHour,  setNewHour]  = useState('8');
   const [newMin,   setNewMin]   = useState('00');
   const [newAmPm,  setNewAmPm]  = useState('AM');
+  const [reminderMins, setReminderMins] = useState(10);
 
   // derive per-day list — computed fresh on every render
   const dateKey = toDateKey(selectedDate);
@@ -126,6 +137,10 @@ const StudyPlannerScreen = () => {
       {
         text: 'Delete', style: 'destructive',
         onPress: () => {
+          // Cancel the scheduled reminder notification if one exists
+          if (task.notifId) {
+            Notifications.cancelScheduledNotificationAsync(task.notifId).catch(() => {});
+          }
           if (user?.uid) deleteUserDocument(user.uid, 'plannerTasks', task.id);
           setAllTasks(prev => prev.filter(t => t.id !== task.id));
         },
@@ -135,6 +150,7 @@ const StudyPlannerScreen = () => {
   const resetForm = () => {
     setNewLabel(''); setNewTag('');
     setNewHour('8'); setNewMin('00'); setNewAmPm('AM');
+    setReminderMins(10);
     setAddError('');
     setShowAdd(false);
   };
@@ -148,7 +164,39 @@ const StudyPlannerScreen = () => {
     setAddError('');
     const h = parseInt(newHour, 10);
     const time = (h >= 1 && h <= 12) ? to24h(newHour, newMin, newAmPm) : '--:--';
-    const newTask = { label, tag: newTag.trim() || 'Study', time, date: dateKey, done: false };
+    const newTask = { label, tag: newTag.trim() || 'Study', time, date: dateKey, done: false, reminderMins };
+
+    // Schedule reminder notification if task has a valid time and reminder is set
+    let notifId = null;
+    if (reminderMins > 0 && time !== '--:--') {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status === 'granted') {
+          // Build trigger date: task date + task time − reminderMins
+          const [th, tm] = time.split(':').map(Number);
+          const triggerDate = new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            selectedDate.getDate(),
+            th, tm, 0
+          );
+          triggerDate.setMinutes(triggerDate.getMinutes() - reminderMins);
+
+          if (triggerDate > new Date()) {
+            notifId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: '⏰ Task Reminder',
+                body: `"${label}" starts in ${reminderMins} minute${reminderMins > 1 ? 's' : ''}!`,
+                sound: 'default',
+                ...(Platform.OS === 'android' ? { channelId: 'studyzen-reminders' } : {}),
+              },
+              trigger: triggerDate,
+            });
+          }
+        }
+      } catch (_) {}
+    }
+    if (notifId) newTask.notifId = notifId;
 
     setSaving(true);
     try {
@@ -350,6 +398,26 @@ const StudyPlannerScreen = () => {
               </View>
             </View>
 
+            {/* Reminder selector */}
+            <Text style={[s.fieldLabel, { color: theme.textSec }]}>Remind me before</Text>
+            <View style={s.reminderRow}>
+              {REMINDER_OPTS.map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    s.reminderPill,
+                    { backgroundColor: reminderMins === opt.value ? theme.accent : theme.input },
+                  ]}
+                  onPress={() => setReminderMins(opt.value)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[s.reminderPillTxt, { color: reminderMins === opt.value ? '#fff' : theme.textSec }]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* Inline error */}
             {addError ? (
               <Text style={s.errorTxt}>{addError}</Text>
@@ -475,6 +543,9 @@ const s = StyleSheet.create({
   ampmGroup:{ flexDirection: 'row', marginLeft: 12 },
   ampmBtn:  { paddingHorizontal: SW * 0.04, paddingVertical: 10, borderRadius: 10 },
   ampmTxt:  { fontSize: 13, fontWeight: '800' },
+  reminderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  reminderPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
+  reminderPillTxt: { fontSize: 13, fontWeight: '700' },
   actionRow:{ flexDirection: 'row' },
   actionBtn:{ flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
   actionBtnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
