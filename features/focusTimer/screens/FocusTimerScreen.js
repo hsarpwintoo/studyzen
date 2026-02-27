@@ -70,15 +70,6 @@ const FocusTimerScreen = () => {
 
   // Request notification permission + Android channel + audio mode
   useEffect(() => {
-    Notifications.requestPermissionsAsync().catch(() => {});
-    if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('studyzen-timer', {
-        name: 'Study Timer',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: 'default',
-        vibrationPattern: [0, 300, 100, 300],
-      }).catch(() => {});
-    }
     // Allow sound to play through speaker even when ringer is silent
     Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,

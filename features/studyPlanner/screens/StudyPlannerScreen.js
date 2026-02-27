@@ -98,6 +98,11 @@ const StudyPlannerScreen = () => {
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   const done = tasks.filter(t => t.done).length;
 
+  // ── request notification permission + ensure channel exists (Android) ───
+  useEffect(() => {
+    Notifications.requestPermissionsAsync().catch(() => {});
+  }, []);
+
   // ── Firestore listener ───────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) return;
@@ -172,17 +177,15 @@ const StudyPlannerScreen = () => {
     let notifId = null;
     if (notifEnabled && reminderMins > 0 && time !== '--:--') {
       try {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status === 'granted') {
-          // Build trigger date: task date + task time − reminderMins
-          const [th, tm] = time.split(':').map(Number);
-          const triggerDate = new Date(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            selectedDate.getDate(),
-            th, tm, 0
-          );
-          triggerDate.setMinutes(triggerDate.getMinutes() - reminderMins);
+        // Build trigger date: task date + task time − reminderMins
+        const [th, tm] = time.split(':').map(Number);
+        const triggerDate = new Date(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth(),
+          selectedDate.getDate(),
+          th, tm, 0
+        );
+        triggerDate.setMinutes(triggerDate.getMinutes() - reminderMins);
 
           if (triggerDate > new Date()) {
             notifId = await Notifications.scheduleNotificationAsync({
@@ -195,7 +198,6 @@ const StudyPlannerScreen = () => {
               trigger: triggerDate,
             });
           }
-        }
       } catch (_) {}
     }
     if (notifId) newTask.notifId = notifId;
