@@ -11,6 +11,8 @@ import {
   updateProfile,
   updatePassword,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -58,6 +60,23 @@ export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
  * @param {function} callback - Receives the user object (or null when signed out)
  */
 export const subscribeToAuthChanges = (callback) => onAuthStateChanged(auth, callback);
+
+/**
+ * Sign in (or register) using a Google ID token / access token obtained
+ * via expo-auth-session. Creates/updates the Firestore profile automatically.
+ */
+export const signInWithGoogle = async (idToken, accessToken) => {
+  const credential = GoogleAuthProvider.credential(idToken ?? null, accessToken ?? null);
+  const userCredential = await signInWithCredential(auth, credential);
+  const user = userCredential.user;
+  // Upsert Firestore profile (merge so existing fields are preserved)
+  await setDoc(
+    doc(db, 'users', user.uid),
+    { name: user.displayName || '', email: user.email || '', updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+  return user;
+};
 
 /** Convenience getter for the currently signed-in user (may be null). */
 export const getCurrentUser = () => auth.currentUser;

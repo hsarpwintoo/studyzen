@@ -2,12 +2,13 @@
   "expo": {
     "name": "StudyZen",
     "slug": "studyzen",
+    "scheme": "studyzen",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
-    "ios": { },
-    "android": { "adaptiveIcon": { "backgroundColor": "#F5EFE6" } },
+    "ios": { "bundleIdentifier": "com.studyzen.app" },
+    "android": { "adaptiveIcon": { "backgroundColor": "#F5EFE6" }, "package": "com.studyzen.app" },
     "web": {}
   }
 }
