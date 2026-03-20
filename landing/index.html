@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="StudyZen is a simple study tool with a planner, focus timer, and progress tracking." />
+  <title>StudyZen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-mesh" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-wrap">
+      <a href="#" class="brand" aria-label="StudyZen">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>StudyZen</span>
+      </a>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#how">How It Works</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="mobileNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a id="launchAppBtn" class="btn btn-nav" href="https://studyzen-2b6f9.web.app/" target="_blank" rel="noopener noreferrer">Launch App</a>
+    </div>
+    <nav id="mobileNav" class="mobile-nav" aria-label="Mobile navigation">
+      <a href="#features">Features</a>
+      <a href="#about">About</a>
+      <a href="#how">How It Works</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero reveal">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">StudyZen helps you stay calm and consistent</p>
+          <h1>Master Your Focus, Study with Zen.</h1>
+          <p class="subtext">
+            A clean space to plan your tasks, run focused sessions, and keep your streak alive without last-minute panic.
+          </p>
+          <a id="letsGoBtn" class="btn btn-hero" href="https://studyzen-2b6f9.web.app/" target="_blank" rel="noopener noreferrer">Let’s Go</a>
+        </div>
+
+        <aside class="hero-panel" aria-label="Today at a glance">
+          <h2>Today at a glance</h2>
+          <ul>
+            <li><span class="dot"></span>Plan your study tasks and delete what is no longer needed.</li>
+            <li><span class="dot"></span>Start the Zen timer and keep your session distraction-free.</li>
+            <li><span class="dot"></span>Track daily streak and completion progress to stay consistent.</li>
+          </ul>
+          <p>Built for students who want simple structure and real progress every day.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="how" class="how reveal">
+      <div class="container how-wrap">
+        <p class="section-kicker">How It Works</p>
+        <h2 class="section-title">A simple 3-step flow</h2>
+        <p class="section-subtext">Set a clear plan, start a focused session, and keep your daily momentum with simple progress tracking.</p>
+        <div class="how-grid">
+          <article class="step-card">
+            <span class="step-index">1</span>
+            <h3>Plan your task</h3>
+            <p>Add what you need to study and keep your list focused.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">2</span>
+            <h3>Start the Zen timer</h3>
+            <p>Pick your minutes and begin a focused study session.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">3</span>
+            <h3>Track your streak</h3>
+            <p>See daily progress and build consistency over time.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features reveal" aria-label="Core features">
+      <div class="container plain-wrap">
+        <p class="section-kicker">Features</p>
+        <h2 class="section-title">Only the tools you actually use</h2>
+        <p class="section-subtext">StudyZen is intentionally minimal, so every screen supports your real study flow without extra distractions.</p>
+        <div class="feature-grid">
+          <article class="card">
+            <h3>Planner</h3>
+            <p>Add tasks, mark tasks done, and delete tasks when needed.</p>
+            <div class="mini-panel">
+              <div class="mini-row"><span>Calculus practice</span><span class="tag">Done</span></div>
+              <div class="mini-row"><span>Read chapter 4</span><span class="tag">Delete</span></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Focus Timer</h3>
+            <p>Use start, pause, and reset with adjustable session length.</p>
+            <div class="timer">25:00</div>
+          </article>
+
+          <article class="card">
+            <h3>Streak Tracking</h3>
+            <p>Follow daily sessions and completion progress at a glance.</p>
+            <div class="progress">
+              <div class="bar"><span class="progress-fill-animated" style="width: 68%"></span></div>
+              <small>Sessions today: 4 · Progress: 68%</small>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about reveal">
+      <div class="container section-wrap">
+        <p class="section-kicker">About</p>
+        <div class="about-panel">
+          <h2 class="section-title">A calmer way to avoid last-minute cramming</h2>
+          <p>
+            StudyZen was made for students who want peace in productivity. Instead of chaotic all-nighters,
+            it gives you a simple daily rhythm: plan clearly, focus deeply, and see steady progress.
+          </p>
+          <p class="engagement-note">
+            Students keep coming back to StudyZen because the workflow is simple to follow, quick to start,
+            and easy to stay consistent with every day.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="engagement reveal" aria-label="Engagement highlights">
+      <div class="container plain-wrap">
+        <p class="section-kicker">User Response</p>
+        <h2 class="section-title">StudyZen is getting strong positive reviews from students</h2>
+        <p class="section-subtext">Users often highlight the clean workflow, easy timer sessions, and progress tracking that makes daily study feel more manageable.</p>
+        <div class="engagement-grid">
+          <article class="stripe-card">
+            <p class="stripe-label">Good Feedback</p>
+            <h3>Students love the calm workflow</h3>
+            <p>Users say the app feels clean, focused, and easy to follow during busy study weeks.</p>
+          </article>
+          <article class="stripe-card">
+            <p class="stripe-label">Good Feedback</p>
+            <h3>Simple design keeps them returning</h3>
+            <p>The straightforward planner and timer setup helps students build a habit of daily use.</p>
+          </article>
+          <article class="stripe-card">
+            <p class="stripe-label">Why Use StudyZen</p>
+            <h3>Turn plans into action faster</h3>
+            <p>From writing tasks to starting focus sessions, everything is designed to reduce friction.</p>
+          </article>
+          <article class="stripe-card">
+            <p class="stripe-label">Why Use StudyZen</p>
+            <h3>Stay consistent without burnout</h3>
+            <p>Progress tracking and streak visibility keep motivation steady without overcomplicating your day.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq reveal" aria-label="Frequently asked questions">
+      <div class="container plain-wrap">
+        <p class="section-kicker">FAQ</p>
+        <h2 class="section-title">Frequently asked questions</h2>
+        <div class="faq-grid">
+          <article class="faq-item">
+            <h4>Is StudyZen complicated to use?</h4>
+            <p>No. The app is intentionally minimal: planner, timer, and progress tracking.</p>
+          </article>
+          <article class="faq-item">
+            <h4>Can I adjust my focus session length?</h4>
+            <p>Yes. You can change the timer minutes before starting each session.</p>
+          </article>
+          <article class="faq-item">
+            <h4>How does streak tracking help?</h4>
+            <p>It shows daily consistency so you can build steady study habits over time.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-highlight reveal" aria-label="Get started">
+      <div class="container cta-highlight-wrap">
+        <p class="section-kicker">Start Your Flow</p>
+        <h2 class="section-title">Small daily wins become big academic progress.</h2>
+        <p class="cta-subtext">Keep your study life clear, focused, and consistent with one calm routine each day.</p>
+        <a class="btn btn-hero" href="https://studyzen-2b6f9.web.app/" target="_blank" rel="noopener noreferrer">Let’s Go</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="year"></span> StudyZen</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

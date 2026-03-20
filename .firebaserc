@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "studyzen-2b6f9"
-  }
+  },
+  "targets": {
+    "studyzen-2b6f9": {
+      "hosting": {
+        "studyzen-landing": [
+          "studyzen-landing"
+        ],
+        "studyzen-app": [
+          "studyzen-2b6f9"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

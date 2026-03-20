@@ -45,6 +45,38 @@ const formatDate = (d) =>
   d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
 const isToday = (d) => toDateKey(d) === toDateKey(new Date());
 
+const requestWebNotificationPermission = async () => {
+  if (Platform.OS !== 'web') return false;
+  if (typeof window === 'undefined' || !('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try {
+    const status = await Notification.requestPermission();
+    return status === 'granted';
+  } catch {
+    return false;
+  }
+};
+
+const scheduleWebReminder = async (triggerDate, title, body) => {
+  if (Platform.OS !== 'web') return null;
+  if (typeof window === 'undefined' || !('Notification' in window)) return null;
+
+  const granted = await requestWebNotificationPermission();
+  if (!granted) return null;
+
+  const delay = triggerDate.getTime() - Date.now();
+  if (delay <= 0) return null;
+
+  window.setTimeout(() => {
+    try {
+      new Notification(title, { body });
+    } catch {}
+  }, delay);
+
+  return `web-${Date.now()}`;
+};
+
 // ─── time helpers ────────────────────────────────────────────────────────────
 const to24h = (hour12, minute, ampm) => {
   let h = parseInt(hour12, 10) % 12;
@@ -101,6 +133,7 @@ const StudyPlannerScreen = () => {
   // ── request notification permission + ensure channel exists (Android) ───
   useEffect(() => {
     Notifications.requestPermissionsAsync().catch(() => {});
+    requestWebNotificationPermission().catch(() => {});
   }, []);
 
   // ── Firestore listener ───────────────────────────────────────────────────
@@ -188,15 +221,22 @@ const StudyPlannerScreen = () => {
         triggerDate.setMinutes(triggerDate.getMinutes() - reminderMins);
 
           if (triggerDate > new Date()) {
-            notifId = await Notifications.scheduleNotificationAsync({
-              content: {
-                title: '⏰ Task Reminder',
-                body: `"${label}" starts in ${reminderMins} minute${reminderMins > 1 ? 's' : ''}!`,
-                sound: 'default',
-                ...(Platform.OS === 'android' ? { channelId: 'studyzen-reminders' } : {}),
-              },
-              trigger: triggerDate,
-            });
+            const title = '⏰ Task Reminder';
+            const body = `"${label}" starts in ${reminderMins} minute${reminderMins > 1 ? 's' : ''}!`;
+
+            if (Platform.OS === 'web') {
+              notifId = await scheduleWebReminder(triggerDate, title, body);
+            } else {
+              notifId = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title,
+                  body,
+                  sound: 'default',
+                  ...(Platform.OS === 'android' ? { channelId: 'studyzen-reminders' } : {}),
+                },
+                trigger: triggerDate,
+              });
+            }
           }
       } catch (_) {}
     }
