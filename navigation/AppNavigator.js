@@ -5,18 +5,20 @@ import HomeScreen from '../features/home/screens/HomeScreen';
 import FocusTimerScreen from '../features/focusTimer/screens/FocusTimerScreen';
 import StudyPlannerScreen from '../features/studyPlanner/screens/StudyPlannerScreen';
 import SettingsScreen from '../features/settings/screens/SettingsScreen';
+import HistoryScreen from '../features/history/screens/HistoryScreen';
 import { useTheme } from '../context/ThemeContext';
 
 const TABS = [
   { key: 'Home',     label: 'Home',    icon: '🏠' },
   { key: 'Timer',    label: 'Focus',   icon: '⏱' },
   { key: 'Planner',  label: 'Planner', icon: '📅' },
+  { key: 'History',  label: 'History', icon: '🗂' },
   { key: 'Settings', label: 'Settings',icon: '⚙️' },
 ];
 
 const SCREENS = {
   Home: HomeScreen, Timer: FocusTimerScreen,
-  Planner: StudyPlannerScreen, Settings: SettingsScreen,
+  Planner: StudyPlannerScreen, History: HistoryScreen, Settings: SettingsScreen,
 };
 
 const AppNavigator = () => {

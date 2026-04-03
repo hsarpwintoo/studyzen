@@ -78,9 +78,11 @@ const HomeScreen = ({ navigateTo }) => {
   const handleLogout = async () => { await logoutUser(); setUser(null); };
 
   const toggleTask = (task) => {
-    saveUserTask(user.uid, 'plannerTasks', task.id, { done: !task.done });
+    const nextDone = !task.done;
+    const nextCompletedAt = nextDone ? new Date().toISOString() : null;
+    saveUserTask(user.uid, 'plannerTasks', task.id, { done: nextDone, completedAt: nextCompletedAt });
     setPlannerTasks(prev =>
-      prev.map(t => t.id === task.id ? { ...t, done: !t.done } : t)
+      prev.map(t => t.id === task.id ? { ...t, done: nextDone, completedAt: nextCompletedAt } : t)
     );
   };
 
@@ -94,6 +96,11 @@ const HomeScreen = ({ navigateTo }) => {
     : focusMins > 0 ? `${focusMins}m` : '0m';
   const focusTask = plannerTasks.find(t => !t.done);
   const upcoming  = plannerTasks.filter(t => !t.done).slice(0, 3);
+  const heroFocusText = focusTask
+    ? focusTask.label
+    : done > 0
+      ? 'All done for today! 🎉'
+      : 'No task completed yet. Start with one small win.';
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: '#F9F7F2' }]}>
@@ -130,7 +137,7 @@ const HomeScreen = ({ navigateTo }) => {
         <View style={s.heroCard}>
           <Text style={s.heroLabel}>TODAY'S FOCUS</Text>
           <Text style={s.heroSubject} numberOfLines={2}>
-            {focusTask ? focusTask.label : 'All done for today! 🎉'}
+            {heroFocusText}
           </Text>
           {focusTask ? (
             <View style={s.heroMeta}>
