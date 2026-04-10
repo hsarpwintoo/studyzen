@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import FocusTimerScreen from '../features/focusTimer/screens/FocusTimerScreen';
@@ -21,17 +22,58 @@ const SCREENS = {
   Planner: StudyPlannerScreen, History: HistoryScreen, Settings: SettingsScreen,
 };
 
+const PAGE_TITLES = {
+  Home: 'StudyZen | Dashboard',
+  Timer: 'StudyZen | Focus Timer',
+  Planner: 'StudyZen | Study Planner',
+  History: 'StudyZen | Task History',
+  Settings: 'StudyZen | Settings',
+};
+
+const LAST_TAB_KEY = '@studyzen:lastTab';
+
 const AppNavigator = () => {
   const [active, setActive] = useState('Home');
   const { theme } = useTheme();
-  const ActiveScreen = SCREENS[active];
+
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_TAB_KEY)
+      .then((saved) => {
+        if (saved && TABS.some((t) => t.key === saved)) {
+          setActive(saved);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(LAST_TAB_KEY, active).catch(() => {});
+  }, [active]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = PAGE_TITLES[active] || 'StudyZen';
+    }
+  }, [active]);
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]} edges={['top']}>
       <View style={styles.screen}>
-        {active === 'Home'
-          ? <HomeScreen navigateTo={setActive} />
-          : <ActiveScreen />}
+        {TABS.map((tab) => {
+          const Screen = SCREENS[tab.key];
+          const visible = active === tab.key;
+          return (
+            <View
+              key={tab.key}
+              style={[styles.screenLayer, visible ? styles.screenVisible : styles.screenHidden]}
+              pointerEvents={visible ? 'auto' : 'none'}
+            >
+              {tab.key === 'Home'
+                ? <HomeScreen navigateTo={setActive} />
+                : <Screen />}
+            </View>
+          );
+        })}
       </View>
       <View style={[styles.tabBar, { backgroundColor: theme.tabBg, borderTopColor: theme.tabBorder }]}>
         {TABS.map((tab) => {
@@ -52,6 +94,9 @@ const AppNavigator = () => {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   screen: { flex: 1 },
+  screenLayer: { ...StyleSheet.absoluteFillObject },
+  screenVisible: { opacity: 1 },
+  screenHidden: { opacity: 0 },
   tabBar: { flexDirection: 'row', borderTopWidth: 1, paddingBottom: 12, paddingHorizontal: 8 },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   tabIndicator: { height: 3, width: 28, backgroundColor: 'transparent', borderRadius: 2, marginBottom: 4 },

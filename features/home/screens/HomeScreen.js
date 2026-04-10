@@ -96,6 +96,7 @@ const HomeScreen = ({ navigateTo }) => {
     : focusMins > 0 ? `${focusMins}m` : '0m';
   const focusTask = plannerTasks.find(t => !t.done);
   const upcoming  = plannerTasks.filter(t => !t.done).slice(0, 3);
+  const hasNoTasksToday = total === 0;
   const heroFocusText = focusTask
     ? focusTask.label
     : done > 0
@@ -168,7 +169,9 @@ const HomeScreen = ({ navigateTo }) => {
         <Text style={s.sectionTitle}>Upcoming</Text>
         {upcoming.length === 0 ? (
           <View style={s.emptyUpcoming}>
-            <Text style={s.emptyUpcomingTxt}>No upcoming tasks. All clear! ✅</Text>
+            <Text style={s.emptyUpcomingTxt}>
+              {hasNoTasksToday ? 'No tasks yet. Add one in Planner to get started.' : 'No upcoming tasks. All clear! ✅'}
+            </Text>
           </View>
         ) : (
           upcoming.map((t) => (
@@ -195,6 +198,18 @@ const HomeScreen = ({ navigateTo }) => {
               </View>
             </TouchableOpacity>
           ))
+        )}
+
+        {hasNoTasksToday && (
+          <View style={s.firstTaskWrap}>
+            <TouchableOpacity
+              style={s.firstTaskBtn}
+              onPress={() => navigateTo?.('Planner')}
+              activeOpacity={0.88}
+            >
+              <Text style={s.firstTaskBtnTxt}>Plan Your First Task</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <View style={{ height: 24 }} />
@@ -246,6 +261,17 @@ const s = StyleSheet.create({
   track:          { height: 8, borderRadius: 999, backgroundColor: '#F1EFE9', overflow: 'hidden', marginBottom: 8 },
   fill:           { height: '100%', borderRadius: 999, backgroundColor: '#A68D7B' },
   progressSub:    { fontSize: 12, color: '#706C61' },
+
+  // First task CTA
+  firstTaskWrap: { alignItems: 'center', marginTop: 2, marginBottom: 8 },
+  firstTaskBtn: {
+    backgroundColor: '#A68D7B',
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    ...SHADOW,
+  },
+  firstTaskBtnTxt: { color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 0.2 },
 
   // Upcoming
   sectionTitle:     { fontSize: 16, fontWeight: '800', color: '#2D2D2D', marginBottom: 12 },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -33,6 +33,12 @@ if (Platform.OS === 'android') {
 }
 
 const App = () => {
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.title = 'StudyZen';
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

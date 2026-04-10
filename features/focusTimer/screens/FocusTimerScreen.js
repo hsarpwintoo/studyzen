@@ -34,29 +34,57 @@ const todayKey = () => {
 const W = Dimensions.get('window').width;
 const RING = Math.min(W * 0.52, 190);
 const PRESETS = [
-  { label: 'Focus', mins: 25 },
-  { label: 'Short', mins: 5 },
-  { label: 'Long',  mins: 15 },
+  { label: 'Focus', mins: 50 },
+  { label: 'Short', mins: 20 },
+  { label: 'Long',  mins: 90 },
 ];
+
+const playSound = async (asset, volume = 1.0) => {
+  try {
+    const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: true, volume });
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.didJustFinish) sound.unloadAsync().catch(() => {});
+    });
+    return sound;
+  } catch {
+    return null;
+  }
+};
+
+const playLoadedSound = async (sound) => {
+  if (!sound) return;
+  try {
+    await sound.replayAsync();
+  } catch {
+    try {
+      await sound.playAsync();
+    } catch {}
+  }
+};
 
 const FocusTimerScreen = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { soundsEnabled } = useSettings();
   const [preset, setPreset] = useState(PRESETS[0]);
-  const [customMins, setCustomMins] = useState(25);
-  const [minutes, setMinutes] = useState(25);
+  const [customMins, setCustomMins] = useState(50);
+  const [minutes, setMinutes] = useState(50);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
   const tick         = useRef(null);
+  const countdownRef = useRef(null);
+  const tickSoundRef = useRef(null);
+  const bellSoundRef = useRef(null);
   const completedRef = useRef(false);
-  const customMinsRef  = useRef(25);
+  const customMinsRef  = useRef(50);
   const presetLabelRef = useRef(PRESETS[0].label);
   const justFinishedRef = useRef(false);
 
   const [showDoneModal, setShowDoneModal] = useState(false);
   const [doneMsg, setDoneMsg] = useState('');
+  const [countdown, setCountdown] = useState(null);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -74,8 +102,44 @@ const FocusTimerScreen = () => {
     Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       allowsRecordingIOS: false,
-      staysActiveInBackground: false,
+      staysActiveInBackground: true,
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSounds = async () => {
+      try {
+        const [tickLoaded, bellLoaded] = await Promise.all([
+          Audio.Sound.createAsync(require('../../../assets/sounds/tick.wav'), { shouldPlay: false, volume: 0.9 }),
+          Audio.Sound.createAsync(require('../../../assets/sounds/ting.wav'), { shouldPlay: false, volume: 0.9 }),
+        ]);
+        if (!mounted) {
+          await tickLoaded.sound.unloadAsync().catch(() => {});
+          await bellLoaded.sound.unloadAsync().catch(() => {});
+          return;
+        }
+        tickSoundRef.current = tickLoaded.sound;
+        bellSoundRef.current = bellLoaded.sound;
+      } catch {}
+    };
+
+    loadSounds();
+
+    return () => {
+      mounted = false;
+      tickSoundRef.current?.unloadAsync().catch(() => {});
+      bellSoundRef.current?.unloadAsync().catch(() => {});
+      tickSoundRef.current = null;
+      bellSoundRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(countdownRef.current);
+    };
   }, []);
 
   // Watch for timer completion
@@ -85,8 +149,8 @@ const FocusTimerScreen = () => {
       const msg = COMPLETION_MESSAGES[Math.floor(Math.random() * COMPLETION_MESSAGES.length)];
       setDoneMsg(msg);
       setShowDoneModal(true);
-      // Vibrate
-      Vibration.vibrate([0, 400, 100, 400, 100, 600]);
+      // Vibrate more strongly on completion
+      Vibration.vibrate([0, 250, 80, 250, 80, 500]);
       // System notification (plays notification sound via OS)
       Notifications.scheduleNotificationAsync({
         content: {
@@ -98,31 +162,11 @@ const FocusTimerScreen = () => {
         trigger: null,
       }).catch(() => {});
       // Play cheerful in-app completion chime via expo-av
-      Audio.Sound.createAsync(
-        require('../../../assets/sounds/complete.wav'),
-        { shouldPlay: true, volume: 1.0 }
-      ).then(({ sound }) => {
-        sound.setOnPlaybackStatusUpdate(status => {
-          if (status.didJustFinish) sound.unloadAsync();
-        });
-      }).catch(() => {});
+      if (soundsEnabled) {
+        playLoadedSound(bellSoundRef.current);
+      }
     }
-  }, [running]);
-
-  // Tick sound for last 3 seconds of countdown
-  useEffect(() => {
-    if (!running || !soundsEnabled) return;
-    if (minutes === 0 && seconds >= 1 && seconds <= 3) {
-      Audio.Sound.createAsync(
-        require('../../../assets/sounds/tick.wav'),
-        { shouldPlay: true, volume: 0.9 }
-      ).then(({ sound }) => {
-        sound.setOnPlaybackStatusUpdate(status => {
-          if (status.didJustFinish) sound.unloadAsync();
-        });
-      }).catch(() => {});
-    }
-  }, [seconds, minutes, running, soundsEnabled]);
+  }, [running, soundsEnabled]);
 
   useEffect(() => {
     if (running) {
@@ -156,6 +200,52 @@ const FocusTimerScreen = () => {
     return () => clearInterval(tick.current);
   }, [running]);
 
+  useEffect(() => {
+    if (!starting) {
+      clearInterval(countdownRef.current);
+      return;
+    }
+
+    clearInterval(countdownRef.current);
+    let current = 3;
+    setCountdown(current);
+
+    countdownRef.current = setInterval(() => {
+      current -= 1;
+      if (current > 0) {
+        setCountdown(current);
+        return;
+      }
+
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+      setCountdown(null);
+
+      const startWithBell = async () => {
+        if (soundsEnabled) {
+          await playLoadedSound(bellSoundRef.current);
+        }
+        setStarting(false);
+        setRunning(true);
+      };
+
+      setTimeout(() => {
+        startWithBell().catch(() => {
+          setStarting(false);
+          setRunning(true);
+        });
+      }, 150);
+    }, 1000);
+
+    return () => clearInterval(countdownRef.current);
+  }, [starting]);
+
+  useEffect(() => {
+    if (!countdown || !soundsEnabled) return;
+    Vibration.vibrate(80);
+    playLoadedSound(tickSoundRef.current);
+  }, [countdown, soundsEnabled]);
+
   const selectPreset = (p) => {
     setRunning(false); setPreset(p);
     setCustomMins(p.mins); customMinsRef.current = p.mins;
@@ -164,14 +254,35 @@ const FocusTimerScreen = () => {
   };
 
   const adjustMins = (delta) => {
-    if (running) return;
+    if (running || starting) return;
     const next = Math.min(90, Math.max(1, customMins + delta));
     setCustomMins(next); customMinsRef.current = next;
     setMinutes(next); setSeconds(0);
   };
 
-  const reset = () => { setRunning(false); setMinutes(customMins); setSeconds(0); };
+  const reset = () => {
+    setRunning(false);
+    setStarting(false);
+    setCountdown(null);
+    clearInterval(countdownRef.current);
+    setMinutes(customMins);
+    setSeconds(0);
+  };
   const pad = n => String(n).padStart(2, '0');
+
+  const startTimer = () => {
+    if (running || starting) return;
+    if (minutes === 0 && seconds === 0) {
+      setMinutes(customMins);
+      return;
+    }
+    setStarting(true);
+  };
+
+  const toggleRunning = () => {
+    if (starting) return;
+    setRunning(r => !r);
+  };
 
   return (
     <SafeAreaView style={[s.safeArea, { backgroundColor: theme.bg }]}>
@@ -228,10 +339,16 @@ const FocusTimerScreen = () => {
         <TouchableOpacity style={[s.resetBtn, { backgroundColor: theme.input }]} onPress={reset} activeOpacity={0.8}>
           <Text style={[s.resetTxt, { color: theme.brown }]}>↺ Reset</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.startBtn, { backgroundColor: theme.brown }]} onPress={() => setRunning(r => !r)} activeOpacity={0.85}>
-          <Text style={s.startTxt}>{running ? '⏸ Pause' : '▶ Start'}</Text>
+        <TouchableOpacity style={[s.startBtn, { backgroundColor: theme.brown }]} onPress={running ? toggleRunning : startTimer} activeOpacity={0.85}>
+          <Text style={s.startTxt}>{running ? '⏸ Pause' : starting ? 'Starting…' : '▶ Start'}</Text>
         </TouchableOpacity>
       </View>
+
+      {countdown ? (
+        <View style={[s.countdownBadge, { backgroundColor: theme.brown }]}> 
+          <Text style={s.countdownTxt}>{countdown}</Text>
+        </View>
+      ) : null}
 
       <View style={s.sessions}>
         <Text style={[s.sessionsTxt, { color: theme.textSec }]}>Sessions today: {sessionCount}</Text>
@@ -261,7 +378,7 @@ const FocusTimerScreen = () => {
             <Text style={[s.doneMsg, { color: theme.textSec }]}>{doneMsg}</Text>
             <TouchableOpacity
               style={[s.doneBtn, { backgroundColor: theme.brown }]}
-              onPress={() => { setShowDoneModal(false); setRunning(false); setMinutes(customMins); setSeconds(0); completedRef.current = false; }}
+              onPress={() => { setShowDoneModal(false); setRunning(false); setStarting(false); setCountdown(null); setMinutes(customMins); setSeconds(0); completedRef.current = false; }}
               activeOpacity={0.85}
             >
               <Text style={s.doneBtnTxt}>Start Another ▶</Text>
@@ -302,6 +419,8 @@ const s = StyleSheet.create({
   resetTxt: { fontSize: 15, fontWeight: '600' },
   startBtn: { paddingHorizontal: 36, paddingVertical: 14, borderRadius: 14, elevation: 4 },
   startTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  countdownBadge: { marginBottom: 16, minWidth: 76, minHeight: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', elevation: 6 },
+  countdownTxt: { fontSize: 34, fontWeight: '800', color: '#fff' },
   sessions: { alignItems: 'center', gap: 8 },
   sessionsTxt: { fontSize: 13 },
   dots: { flexDirection: 'row', gap: 8 },
