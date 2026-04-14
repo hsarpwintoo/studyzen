@@ -6,9 +6,41 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "bundleIdentifier": "com.studyzen.app" },
-    "android": { "adaptiveIcon": { "backgroundColor": "#F5EFE6" }, "package": "com.studyzen.app" },
-    "web": {}
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#F5EFE6"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.studyzen.app"
+    },
+    "android": {
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#6B4330"
+      },
+      "package": "com.studyzen.app"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "web": {},
+    "extra": {
+      "eas": {
+        "projectId": "e5e5d5bf-4149-478d-b02b-53a71e00e1d0"
+      }
+    },
+    "owner": "hsarpwintoo"
   }
 }

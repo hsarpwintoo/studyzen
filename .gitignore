@@ -32,3 +32,8 @@ dist/
 *.sublime-workspace
 expo_log.txt
 dist/
+
+# Android signing secrets
+*.jks
+*.keystore
+key.properties

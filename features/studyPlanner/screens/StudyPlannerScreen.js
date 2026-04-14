@@ -173,7 +173,7 @@ const scheduleTaskReminder = async ({ taskLabel, taskDate, time24, reminderMins,
         title,
         body,
         sound: 'default',
-        ...(Platform.OS === 'android' ? { channelId: 'studyzen-reminders' } : {}),
+        ...(Platform.OS === 'android' ? { channelId: 'studyzen-reminders-v2' } : {}),
       },
       trigger: triggerDate,
     });
@@ -247,10 +247,11 @@ const StudyPlannerScreen = () => {
   useEffect(() => {
     Notifications.requestPermissionsAsync().catch(() => {});
     if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('studyzen-reminders', {
+      Notifications.setNotificationChannelAsync('studyzen-reminders-v2', {
         name: 'Task Reminders',
-        importance: Notifications.AndroidImportance.HIGH,
+        importance: Notifications.AndroidImportance.MAX,
         sound: 'default',
+        vibrationPattern: [0, 250, 100, 250],
       }).catch(() => {});
     }
     requestWebNotificationPermission().catch(() => {});

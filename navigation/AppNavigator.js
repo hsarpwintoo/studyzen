@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TouchableOpacity, StyleSheet, BackHandler, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import FocusTimerScreen from '../features/focusTimer/screens/FocusTimerScreen';
@@ -30,24 +29,23 @@ const PAGE_TITLES = {
   Settings: 'StudyZen | Settings',
 };
 
-const LAST_TAB_KEY = '@studyzen:lastTab';
-
 const AppNavigator = () => {
   const [active, setActive] = useState('Home');
   const { theme } = useTheme();
 
   useEffect(() => {
-    AsyncStorage.getItem(LAST_TAB_KEY)
-      .then((saved) => {
-        if (saved && TABS.some((t) => t.key === saved)) {
-          setActive(saved);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (Platform.OS !== 'android') return undefined;
 
-  useEffect(() => {
-    AsyncStorage.setItem(LAST_TAB_KEY, active).catch(() => {});
+    const onBackPress = () => {
+      if (active !== 'Home') {
+        setActive('Home');
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
   }, [active]);
 
   useEffect(() => {
@@ -70,7 +68,7 @@ const AppNavigator = () => {
             >
               {tab.key === 'Home'
                 ? <HomeScreen navigateTo={setActive} />
-                : <Screen />}
+                : <Screen navigateTo={setActive} />}
             </View>
           );
         })}

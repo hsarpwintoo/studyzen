@@ -18,15 +18,15 @@ Notifications.setNotificationHandler({
 
 // Register Android channels once at startup
 if (Platform.OS === 'android') {
-  Notifications.setNotificationChannelAsync('studyzen-reminders', {
+  Notifications.setNotificationChannelAsync('studyzen-reminders-v2', {
     name: 'Task Reminders',
-    importance: Notifications.AndroidImportance.HIGH,
+    importance: Notifications.AndroidImportance.MAX,
     sound: 'default',
     vibrationPattern: [0, 250, 100, 250],
   }).catch(() => {});
-  Notifications.setNotificationChannelAsync('studyzen-timer', {
+  Notifications.setNotificationChannelAsync('studyzen-timer-v2', {
     name: 'Study Timer',
-    importance: Notifications.AndroidImportance.HIGH,
+    importance: Notifications.AndroidImportance.MAX,
     sound: 'default',
     vibrationPattern: [0, 300, 100, 300],
   }).catch(() => {});

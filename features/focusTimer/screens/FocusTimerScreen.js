@@ -157,7 +157,7 @@ const FocusTimerScreen = () => {
           title: '🎉 Session Complete!',
           body: `${customMinsRef.current}-min ${presetLabelRef.current} session done. ${msg}`,
           sound: 'default',
-          ...(Platform.OS === 'android' ? { channelId: 'studyzen-timer' } : {}),
+          ...(Platform.OS === 'android' ? { channelId: 'studyzen-timer-v2' } : {}),
         },
         trigger: null,
       }).catch(() => {});
