@@ -17,7 +17,7 @@
       "bundleIdentifier": "com.studyzen.app"
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6B4330"
@@ -30,7 +30,9 @@
         {
           "android": {
             "compileSdkVersion": 35,
-            "targetSdkVersion": 35
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "enabledForAllVariants": true
           }
         }
       ]
